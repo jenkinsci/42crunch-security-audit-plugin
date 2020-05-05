@@ -18,6 +18,7 @@ import com.xliic.ci.audit.model.api.ApiCollections;
 import com.xliic.ci.audit.model.api.ErrorMessage;
 import com.xliic.ci.audit.model.api.Maybe;
 import com.xliic.ci.audit.Logger;
+import com.xliic.ci.audit.Secret;
 import com.xliic.ci.audit.model.api.Api;
 import com.xliic.ci.audit.model.api.ApiCollection;
 import com.xliic.ci.audit.model.assessment.AssessmentResponse;
@@ -54,7 +55,7 @@ public class Client {
         Client.proxyPort = proxyPort;
     }
 
-    public static Maybe<RemoteApi> createApi(String collectionId, String name, String json, String apiKey,
+    public static Maybe<RemoteApi> createApi(String collectionId, String name, String json, Secret apiKey,
             Logger logger) throws IOException {
         HttpPost request = new HttpPost(ClientConstants.PLATFORM_URL + "/api/v1/apis");
 
@@ -72,7 +73,7 @@ public class Client {
         return new Maybe<RemoteApi>(new RemoteApi(api.getResult().desc.id, ApiStatus.freshApiStatus()));
     }
 
-    public static Maybe<RemoteApi> updateApi(String apiId, String json, String apiKey, Logger logger)
+    public static Maybe<RemoteApi> updateApi(String apiId, String json, Secret apiKey, Logger logger)
             throws IOException {
         // read api status first
         Maybe<ApiStatus> status = readApiStatus(apiId, apiKey, logger);
@@ -91,12 +92,12 @@ public class Client {
         return new Maybe<RemoteApi>(new RemoteApi(apiId, status.getResult()));
     }
 
-    public static Maybe<String> deleteApi(String apiId, String apiKey, Logger logger) throws IOException {
+    public static Maybe<String> deleteApi(String apiId, Secret apiKey, Logger logger) throws IOException {
         HttpDelete request = new HttpDelete(String.format("%s/api/v1/apis/%s", ClientConstants.PLATFORM_URL, apiId));
         return new ProxyClient<String>(request, apiKey, String.class, logger).execute();
     }
 
-    public static Maybe<AssessmentResponse> readAssessment(Maybe<RemoteApi> api, String apiKey, Logger logger)
+    public static Maybe<AssessmentResponse> readAssessment(Maybe<RemoteApi> api, Secret apiKey, Logger logger)
             throws ClientProtocolException, IOException {
         if (api.isError()) {
             return new Maybe<AssessmentResponse>(api.getError());
@@ -133,7 +134,7 @@ public class Client {
                 new ErrorMessage("Timed out waiting for audit result for API ID: " + api.getResult().apiId));
     }
 
-    public static Maybe<ApiStatus> readApiStatus(String apiId, String apiKey, Logger logger) throws IOException {
+    public static Maybe<ApiStatus> readApiStatus(String apiId, Secret apiKey, Logger logger) throws IOException {
         HttpGet request = new HttpGet(ClientConstants.PLATFORM_URL + "/api/v1/apis/" + apiId);
         Maybe<Api> result = new ProxyClient<Api>(request, apiKey, Api.class, logger).execute();
         if (result.isError()) {
@@ -143,19 +144,19 @@ public class Client {
                 new ApiStatus(result.getResult().assessment.isProcessed, result.getResult().assessment.last));
     }
 
-    public static Maybe<ApiCollection> listCollection(String collectionId, String apiKey, Logger logger)
+    public static Maybe<ApiCollection> listCollection(String collectionId, Secret apiKey, Logger logger)
             throws IOException {
         HttpGet request = new HttpGet(
                 String.format("%s/api/v1/collections/%s/apis", ClientConstants.PLATFORM_URL, collectionId));
         return new ProxyClient<ApiCollection>(request, apiKey, ApiCollection.class, logger).execute();
     }
 
-    public static Maybe<ApiCollections> listCollections(String apiKey, Logger logger) throws IOException {
+    public static Maybe<ApiCollections> listCollections(Secret apiKey, Logger logger) throws IOException {
         HttpGet request = new HttpGet(ClientConstants.PLATFORM_URL + "/api/v1/collections");
         return new ProxyClient<ApiCollections>(request, apiKey, ApiCollections.class, logger).execute();
     }
 
-    public static Maybe<ApiCollections.ApiCollection> createCollection(String collectionName, String apiKey,
+    public static Maybe<ApiCollections.ApiCollection> createCollection(String collectionName, Secret apiKey,
             Logger logger) throws IOException {
         HttpPost request = new HttpPost(ClientConstants.PLATFORM_URL + "/api/v1/collections");
         request.setEntity(new StringEntity(String.format("{\"name\": \"%s\", \"isShared\": false}", collectionName),
@@ -168,9 +169,9 @@ public class Client {
         private java.lang.Class<T> contentClass;
         private Logger logger;
         private HttpRequestBase request;
-        private String apiKey;
+        private Secret apiKey;
 
-        ProxyClient(HttpRequestBase request, String apiKey, Class<T> contentClass, Logger logger) {
+        ProxyClient(HttpRequestBase request, Secret apiKey, Class<T> contentClass, Logger logger) {
             this.request = request;
             this.apiKey = apiKey;
             this.contentClass = contentClass;
@@ -231,9 +232,9 @@ public class Client {
             return null;
         }
 
-        private static void configureRequest(HttpRequestBase request, String apiKey, Logger logger) {
+        private static void configureRequest(HttpRequestBase request, Secret apiKey, Logger logger) {
             request.setHeader("Accept", "application/json");
-            request.setHeader("X-API-KEY", apiKey);
+            request.setHeader("X-API-KEY", apiKey.getPlainText());
             if (Client.userAgent != null) {
                 request.setHeader("User-Agent", Client.userAgent);
             }

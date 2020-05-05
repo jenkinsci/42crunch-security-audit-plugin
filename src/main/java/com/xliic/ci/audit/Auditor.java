@@ -37,10 +37,10 @@ public class Auditor {
     static int MAX_NAME_LEN = 64;
     private OpenApiFinder finder;
     private Logger logger;
-    private String apiKey;
+    private Secret apiKey;
     private ResultCollector resultCollector;
 
-    public Auditor(OpenApiFinder finder, Logger logger, String apiKey) {
+    public Auditor(OpenApiFinder finder, Logger logger, Secret apiKey) {
         this.finder = finder;
         this.logger = logger;
         this.apiKey = apiKey;

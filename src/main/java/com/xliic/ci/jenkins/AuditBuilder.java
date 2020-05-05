@@ -19,6 +19,7 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import com.xliic.ci.audit.AuditException;
 import com.xliic.ci.audit.Auditor;
 import com.xliic.ci.audit.Logger;
+import com.xliic.ci.audit.Secret;
 import com.xliic.ci.audit.Workspace;
 
 import org.jenkinsci.Symbol;
@@ -93,9 +94,9 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("Unable to load API Token credential: " + credentialsId);
         }
 
-        String apiKey = credential.getApiKey().getPlainText();
+        Secret apiKey = new SecretImpl(credential.getApiKey());
 
-        if (!apiKey.matches(ApiKey.UUID_PATTERN)) {
+        if (!apiKey.getPlainText().matches(ApiKey.UUID_PATTERN)) {
             throw new AbortException("Invalid format of API Token");
         }
 
@@ -160,6 +161,19 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         @Override
         public void log(final String message) {
             logger.println(message);
+        }
+    }
+
+    class SecretImpl implements Secret {
+        private hudson.util.Secret secret;
+
+        public SecretImpl(hudson.util.Secret secret) {
+            this.secret = secret;
+        }
+
+        @Override
+        public String getPlainText() {
+            return secret.getPlainText();
         }
     }
 
