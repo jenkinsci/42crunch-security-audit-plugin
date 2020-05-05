@@ -75,7 +75,9 @@ public class Auditor {
         }
 
         // upload mapped files
-        uploaded.putAll(uploadMappedFiles(workspace, mapping));
+        if (mapping != null) {
+            uploaded.putAll(uploadMappedFiles(workspace, mapping));
+        }
 
         HashMap<String, Summary> report = readAssessment(uploaded, failureConditions);
 
