@@ -219,6 +219,7 @@ public class Auditor {
         return openApiFile.isOpenApi();
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD")
     private String createOrFindCollectionId(String collectionName) throws AuditException, IOException {
 
         // check existing collections to see if collection with collectionName already
@@ -294,6 +295,7 @@ public class Auditor {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD")
     private Summary checkAssessment(Maybe<RemoteApi> api, Maybe<AssessmentResponse> assessment,
             FailureConditions conditions) throws JsonParseException, JsonMappingException, IOException {
         if (assessment.isError()) {

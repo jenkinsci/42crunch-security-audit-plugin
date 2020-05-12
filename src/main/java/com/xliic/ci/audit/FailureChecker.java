@@ -43,6 +43,7 @@ public class FailureChecker {
         return failures;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD")
     private ArrayList<String> checkMinScore(AssessmentResponse assessment, FailureConditions conditions) {
         ArrayList<String> failures = new ArrayList<String>();
         int score = Math.round(assessment.attr.data.grade);
@@ -61,12 +62,12 @@ public class FailureChecker {
 
             if (dataScore != null && report.data.score < dataScore.intValue()) {
                 failures.add(String.format("The API data score %d is lower than the set minimum score of %d",
-                        Math.round(report.data.score), dataScore.intValue()));
+                        Math.round(report.data.score), dataScore));
             }
 
             if (securityScore != null && report.security.score < securityScore.intValue()) {
                 failures.add(String.format("The API security score %d is lower than the set minimum score of %d",
-                        Math.round(report.security.score), securityScore.intValue()));
+                        Math.round(report.security.score), securityScore));
             }
 
         }
@@ -155,6 +156,7 @@ public class FailureChecker {
         return failures;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD")
     private int findBySeverity(Issues issues, String severity) {
         if (issues == null) {
             return 0;

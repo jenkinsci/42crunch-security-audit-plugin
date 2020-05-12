@@ -10,13 +10,15 @@ import java.util.HashMap;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings({ "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD",
+        "UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" })
 public class AssessmentReport {
     public boolean valid;
     public String openapiState;
     public Section security;
     public Section data;
 
-    public class Section {
+    public static class Section {
         public float score;
         public Issues issues;
     }

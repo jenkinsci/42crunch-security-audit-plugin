@@ -30,12 +30,13 @@ public class ConfigReader {
 
         Set<ValidationMessage> messages = validate(mapper, data);
         if (messages != null && messages.size() > 0) {
-            String allMessages = "";
+            StringBuffer buffer = new StringBuffer();
             for (ValidationMessage message : messages) {
-                allMessages = allMessages + "\n" + message.toString();
+                buffer.append(message.toString());
+                buffer.append("\n");
             }
             throw new AuditException(
-                    String.format("Config file %s failed schema validation: %s", CONFIG_FILE_NAME, allMessages));
+                    String.format("Config file %s failed schema validation: %s", CONFIG_FILE_NAME, buffer.toString()));
         }
 
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

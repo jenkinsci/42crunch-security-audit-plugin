@@ -7,6 +7,8 @@ package com.xliic.ci.audit.model.api;
 
 import java.time.ZonedDateTime;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings({ "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD",
+        "UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" })
 public class Api {
     public Description desc;
     public Assessment assessment;

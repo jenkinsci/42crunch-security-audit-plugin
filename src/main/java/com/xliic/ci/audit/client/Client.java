@@ -78,7 +78,7 @@ public class Client {
         // read api status first
         Maybe<ApiStatus> status = readApiStatus(apiId, apiKey, logger);
         if (status.isError()) {
-            new Maybe<RemoteApi>(status.getError());
+            return new Maybe<RemoteApi>(status.getError());
         }
         // update the api
         HttpPut request = new HttpPut(ClientConstants.PLATFORM_URL + "/api/v1/apis/" + apiId);

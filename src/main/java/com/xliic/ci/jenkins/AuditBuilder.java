@@ -151,7 +151,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    class LoggerImpl implements Logger {
+    static class LoggerImpl implements Logger {
         private PrintStream logger;
 
         LoggerImpl(final PrintStream logger) {
@@ -164,7 +164,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    class SecretImpl implements Secret {
+    static class SecretImpl implements Secret {
         private hudson.util.Secret secret;
 
         public SecretImpl(hudson.util.Secret secret) {
@@ -177,7 +177,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    class WorkspaceImpl implements Workspace {
+    static class WorkspaceImpl implements Workspace {
 
         private FilePath workspace;
 
