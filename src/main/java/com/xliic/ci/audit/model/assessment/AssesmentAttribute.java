@@ -5,6 +5,8 @@
 
 package com.xliic.ci.audit.model.assessment;
 
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings({ "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD",
+        "UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD" })
 public class AssesmentAttribute {
     public AssessmentAttributeData data;
 }

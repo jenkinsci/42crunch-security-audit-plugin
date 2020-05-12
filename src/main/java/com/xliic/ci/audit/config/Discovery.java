@@ -5,6 +5,8 @@
 
 package com.xliic.ci.audit.config;
 
+import java.util.Arrays;
+
 public class Discovery {
     private static String[] DEFAULT_SEARCH = new String[] { "**/*.json", "**/*.yaml", "**/*.yml", "!node_modules/**",
             "!tsconfig.json" };
@@ -33,10 +35,10 @@ public class Discovery {
     }
 
     public String[] getSearch() {
-        return this.search;
+        return Arrays.copyOf(search, search.length);
     }
 
     public void setSearch(String[] search) {
-        this.search = search;
+        this.search = Arrays.copyOf(search, search.length);
     }
 }
