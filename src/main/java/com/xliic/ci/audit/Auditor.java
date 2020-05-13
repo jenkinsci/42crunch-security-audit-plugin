@@ -74,10 +74,7 @@ public class Auditor {
             uploaded.putAll(uploadDiscoveredFiles(workspace, finder, collectionName, discovery.getSearch(), mapping));
         }
 
-        // upload mapped files
-        if (mapping != null) {
-            uploaded.putAll(uploadMappedFiles(workspace, mapping));
-        }
+        uploaded.putAll(uploadMappedFiles(workspace, mapping));
 
         HashMap<String, Summary> report = readAssessment(uploaded, failureConditions);
 

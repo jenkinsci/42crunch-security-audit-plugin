@@ -14,4 +14,8 @@ public class Mapping extends HashMap<String, String> {
     public void set(String filename, String apiId) {
         this.put(filename, apiId);
     }
+
+    public static Mapping emptyMapping() {
+        return new Mapping();
+    }
 }

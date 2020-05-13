@@ -10,6 +10,7 @@ public class Config {
     public static Config createDefault() {
         Audit audit = new Audit();
         audit.setDiscovery(Discovery.defaultDiscovery());
+        audit.setMapping(Mapping.emptyMapping());
         Config config = new Config();
         config.setAudit(audit);
         return config;
