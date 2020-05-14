@@ -284,7 +284,7 @@ public class Auditor {
             Parser parser = new Parser(workspace);
             Serializer serializer = new Serializer();
             Bundler bundler = new Bundler(serializer);
-            Document document = parser.parse(filename);
+            Document document = parser.parse(workspace.absolutize(filename));
             bundler.bundle(document);
             return serializer.serialize(document);
         } catch (Exception e) {

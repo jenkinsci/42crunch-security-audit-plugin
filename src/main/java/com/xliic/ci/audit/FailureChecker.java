@@ -14,6 +14,7 @@ import com.xliic.ci.audit.model.assessment.AssessmentReport;
 import com.xliic.ci.audit.model.assessment.AssessmentResponse;
 import com.xliic.ci.audit.model.assessment.AssessmentReport.Issue;
 import com.xliic.ci.audit.model.assessment.AssessmentReport.Issues;
+import com.xliic.ci.audit.model.assessment.AssessmentReport.Section;
 
 public class FailureChecker {
 
@@ -60,14 +61,14 @@ public class FailureChecker {
             Integer dataScore = conditions.failOn.getScore().getData();
             Integer securityScore = conditions.failOn.getScore().getSecurity();
 
-            if (dataScore != null && report.data.score < dataScore.intValue()) {
+            if (dataScore != null && getScore(report.data) < dataScore.intValue()) {
                 failures.add(String.format("The API data score %d is lower than the set minimum score of %d",
-                        Math.round(report.data.score), dataScore));
+                        getScore(report.data), dataScore));
             }
 
-            if (securityScore != null && report.security.score < securityScore.intValue()) {
+            if (securityScore != null && getScore(report.security) < securityScore.intValue()) {
                 failures.add(String.format("The API security score %d is lower than the set minimum score of %d",
-                        Math.round(report.security.score), securityScore));
+                        getScore(report.security), securityScore));
             }
 
         }
@@ -77,12 +78,12 @@ public class FailureChecker {
 
     private ArrayList<String> checkInvalidContract(AssessmentReport report, FailureConditions conditions) {
         ArrayList<String> failures = new ArrayList<String>();
-        if (conditions.failOn.getInvalidContract() != null) {
-            boolean invalidContractCondition = conditions.failOn.getInvalidContract().booleanValue();
-            if (invalidContractCondition && report.openapiState.equals("valid")) {
-                failures.add("The OpenAPI definition is not valid");
 
-            }
+        boolean denyInvalidContract = conditions.failOn.getInvalidContract() == null
+                || conditions.failOn.getInvalidContract().booleanValue();
+
+        if (denyInvalidContract && !report.openapiState.equals("valid")) {
+            failures.add("The OpenAPI definition is not valid");
         }
 
         return failures;
@@ -120,7 +121,7 @@ public class FailureChecker {
 
         if (severity != null) {
             String dataSeverity = severity.getData();
-            if (dataSeverity != null && report.data.issues != null) {
+            if (dataSeverity != null && report.data != null && report.data.issues != null) {
                 int found = findBySeverity(report.data.issues, dataSeverity);
                 if (found > 0) {
                     failures.add(String.format("Found %d issues in category \"data\" with severity \"%s\" or higher",
@@ -129,7 +130,7 @@ public class FailureChecker {
             }
 
             String securitySeverity = severity.getSecurity();
-            if (securitySeverity != null && report.security.issues != null) {
+            if (securitySeverity != null && report.security != null && report.security.issues != null) {
                 int found = findBySeverity(report.security.issues, securitySeverity);
                 if (found > 0) {
                     failures.add(
@@ -140,8 +141,10 @@ public class FailureChecker {
 
             String overallSeverity = severity.getOverall();
             if (overallSeverity != null) {
-                int foundData = report.data.issues != null ? findBySeverity(report.data.issues, overallSeverity) : 0;
-                int foundSecurity = report.security.issues != null
+                int foundData = (report.data != null && report.data.issues != null)
+                        ? findBySeverity(report.data.issues, overallSeverity)
+                        : 0;
+                int foundSecurity = (report.security != null && report.security.issues != null)
                         ? findBySeverity(report.security.issues, overallSeverity)
                         : 0;
                 int found = foundData + foundSecurity;
@@ -172,6 +175,13 @@ public class FailureChecker {
         }
 
         return found;
+    }
+
+    private int getScore(Section section) {
+        if (section == null) {
+            return 0;
+        }
+        return Math.round(section.score);
     }
 
 }

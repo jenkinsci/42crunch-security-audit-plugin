@@ -11,4 +11,6 @@ public interface Workspace {
     public String read(String filename) throws IOException, InterruptedException;
 
     public boolean exists(String filename) throws IOException, InterruptedException;
+
+    public String absolutize(String filename) throws IOException, InterruptedException;
 }

@@ -206,6 +206,12 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             FilePath filepath = new FilePath(workspace, filename);
             return filepath.exists();
         }
+
+        @Override
+        public String absolutize(String filename) throws IOException, InterruptedException {
+            FilePath filepath = new FilePath(workspace, filename);
+            return filepath.absolutize().getRemote();
+        }
     }
 
 }
