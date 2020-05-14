@@ -32,6 +32,10 @@ import com.xliic.ci.audit.model.api.ApiCollections;
 import com.xliic.ci.audit.model.api.Maybe;
 import com.xliic.ci.audit.model.assessment.AssessmentReport;
 import com.xliic.ci.audit.model.assessment.AssessmentResponse;
+import com.xliic.oas.bundler.Bundler;
+import com.xliic.oas.bundler.Document;
+import com.xliic.oas.bundler.Parser;
+import com.xliic.oas.bundler.Serializer;
 
 public class Auditor {
     static int MAX_NAME_LEN = 64;
@@ -277,16 +281,12 @@ public class Auditor {
 
     private String parseFile(String filename, Workspace workspace) throws AuditException {
         try {
-            String data = workspace.read(filename);
-
-            if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
-                ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                Object obj = yamlReader.readValue(data, Object.class);
-
-                ObjectMapper jsonWriter = new ObjectMapper();
-                return jsonWriter.writeValueAsString(obj);
-            }
-            return data;
+            Parser parser = new Parser(workspace);
+            Serializer serializer = new Serializer();
+            Bundler bundler = new Bundler(serializer);
+            Document document = parser.parse(filename);
+            bundler.bundle(document);
+            return serializer.serialize(document);
         } catch (Exception e) {
             throw new AuditException(String.format("Failed to parse file: %s %s", filename, e), e);
         }
