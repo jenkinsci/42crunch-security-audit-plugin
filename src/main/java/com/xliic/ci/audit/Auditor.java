@@ -54,6 +54,10 @@ public class Auditor {
         this.resultCollector = resultCollector;
     }
 
+    public void setProxy(String proxyHost, int proxyPort) {
+        Client.setProxy(proxyHost, proxyPort);
+    }
+
     public String audit(Workspace workspace, String collectionName, int minScore)
             throws IOException, InterruptedException, AuditException {
 
@@ -304,5 +308,4 @@ public class Auditor {
         ArrayList<String> failures = checker.checkAssessment(assessment.getResult(), assessmentReport, conditions);
         return new Summary(api, Math.round(assessment.getResult().attr.data.grade), failures.toArray(new String[0]));
     }
-
 }

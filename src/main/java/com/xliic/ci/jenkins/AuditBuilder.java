@@ -32,6 +32,7 @@ import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
 import hudson.model.Run;
@@ -105,6 +106,11 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         final Finder finder = new Finder(workspace);
 
         Auditor auditor = new Auditor(finder, logger, apiKey);
+
+        ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
+        if (proxyConfiguration != null) {
+            auditor.setProxy(proxyConfiguration.name, proxyConfiguration.port);
+        }
 
         try {
             String failure = auditor.audit(auditWorkspace, collectionName, minScore);
