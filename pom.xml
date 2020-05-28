@@ -16,7 +16,7 @@
         <jenkins.version>2.164.3</jenkins.version>
         <java.level>8</java.level>
     </properties>
-    <name>REST API Static Security Testing</name>
+    <name>42Crunch REST API Static Security Testing</name>
     <licenses>
         <license>
             <name>AGPL v3 License</name>
