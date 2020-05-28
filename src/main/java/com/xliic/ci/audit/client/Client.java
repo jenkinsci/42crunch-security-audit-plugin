@@ -241,7 +241,6 @@ public class Client {
 
             HttpHost proxy = getProxyHost();
             if (proxy != null) {
-                logger.log("Using proxy server: " + proxy);
                 RequestConfig config = RequestConfig.custom().setProxy(proxy).build();
                 request.setConfig(config);
             }

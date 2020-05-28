@@ -56,6 +56,7 @@ public class Auditor {
 
     public void setProxy(String proxyHost, int proxyPort) {
         Client.setProxy(proxyHost, proxyPort);
+        logger.log(String.format("Using proxy server: %s:%d ", proxyHost, proxyPort));
     }
 
     public String audit(Workspace workspace, String collectionName, int minScore)
