@@ -87,6 +87,7 @@ public class Inventory implements Iterable<Inventory.Entry> {
         int depth;
         int indirections;
         boolean extended;
+        boolean external;
 
         public Entry(JsonNode parent, String key, JsonNode ref, JsonNode value, JsonPath pathFromRoot, String file,
                 String pointer, JsonPath path, int indirections, Document.Part part) {
@@ -102,7 +103,7 @@ public class Inventory implements Iterable<Inventory.Entry> {
             this.path = path;
             this.file = file;
             this.extended = Resolver.isExtendedRef(ref);
+            this.external = !file.equals(part.getDocumentFile());
         }
     }
-
 }

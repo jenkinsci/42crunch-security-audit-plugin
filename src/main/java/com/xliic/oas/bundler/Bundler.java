@@ -54,7 +54,9 @@ public class Bundler {
         JsonPath path = null;
 
         for (Entry entry : inventory) {
-            if (entry.file.equals(file) && entry.pointer.equals(pointer)) {
+            if (!entry.external) {
+                Util.setRef(entry.ref, entry.pointer);
+            } else if (entry.file.equals(file) && entry.pointer.equals(pointer)) {
                 Util.setRef(entry.ref, pathFromRoot);
             } else if (entry.file.equals(file) && entry.path.isSubPathOf(path)) {
                 Util.setRef(entry.ref, pathFromRoot + entry.pointer.substring(pointer.length()));
@@ -79,6 +81,8 @@ public class Bundler {
                     pathFromRoot = remapped.toPointer();
                     Util.setRef(entry.ref, pathFromRoot);
                 } else {
+                    // TODO properly dereference merging in any keys
+                    // presented in the reference node
                     Util.set(entry.parent, entry.key, value);
                 }
             }

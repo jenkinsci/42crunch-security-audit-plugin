@@ -67,6 +67,10 @@ public class Document {
             return Document.this;
         }
 
+        public String getDocumentFile() {
+            return Document.this.root.location.toString();
+        }
+
         public URI getFilename() {
             return Document.this.base.relativize(this.location);
         }
