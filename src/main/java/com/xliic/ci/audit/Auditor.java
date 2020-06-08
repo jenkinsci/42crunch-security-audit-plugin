@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -29,6 +30,7 @@ import com.xliic.ci.audit.model.OpenApiFile;
 import com.xliic.ci.audit.model.api.Api;
 import com.xliic.ci.audit.model.api.ApiCollection;
 import com.xliic.ci.audit.model.api.ApiCollections;
+import com.xliic.ci.audit.model.api.ErrorMessage;
 import com.xliic.ci.audit.model.api.Maybe;
 import com.xliic.ci.audit.model.assessment.AssessmentReport;
 import com.xliic.ci.audit.model.assessment.AssessmentResponse;
@@ -108,9 +110,27 @@ public class Auditor {
 
     private RemoteApiMap uploadDiscoveredFiles(Workspace workspace, OpenApiFinder finder, String collectionName,
             String[] search, Mapping mapping) throws IOException, InterruptedException, AuditException {
-        String[] openapiFilenames = discoverOpenApiFiles(workspace, finder, search, mapping);
+        DiscoveredOpenApiFiles discovered = discoverOpenApiFiles(workspace, finder, search, mapping);
+
+        // collect list of successfully detected OpenAPI files
+        ArrayList<String> openApiFilenames = new ArrayList<String>();
+        for (Entry<String, Maybe<Boolean>> openapi : discovered.entrySet()) {
+            if (openapi.getValue().isOk()) {
+                openApiFilenames.add(openapi.getKey());
+            }
+        }
         String collectionId = createOrFindCollectionId(makeName(collectionName));
-        return uploadFilesToCollection(openapiFilenames, workspace, collectionId);
+
+        RemoteApiMap remoteApis = uploadFilesToCollection(openApiFilenames, workspace, collectionId);
+
+        // add files which failed to parse to the list of errors
+        for (Entry<String, Maybe<Boolean>> openapi : discovered.entrySet()) {
+            if (openapi.getValue().isError()) {
+                remoteApis.put(openapi.getKey(), new Maybe<>(openapi.getValue().getError()));
+            }
+        }
+
+        return remoteApis;
     }
 
     private RemoteApiMap uploadMappedFiles(Workspace workspace, Mapping mapping) throws IOException, AuditException {
@@ -190,19 +210,25 @@ public class Auditor {
         return failures;
     }
 
-    private String[] discoverOpenApiFiles(Workspace workspace, OpenApiFinder finder, String[] search, Mapping mapping)
-            throws IOException, InterruptedException, AuditException {
-        ArrayList<String> found = new ArrayList<String>();
+    private DiscoveredOpenApiFiles discoverOpenApiFiles(Workspace workspace, OpenApiFinder finder, String[] search,
+            Mapping mapping) throws IOException, InterruptedException, AuditException {
+        DiscoveredOpenApiFiles discovered = new DiscoveredOpenApiFiles();
 
         String[] filenames = findOpenapiFiles(workspace, finder, search);
         logger.log(String.format("Files matching search criteria: %s", String.join(", ", filenames)));
         for (String filename : filenames) {
-            if (isOpenApiFile(filename, workspace) && !mapping.containsKey(filename)) {
-                found.add(filename);
+            try {
+                if (isOpenApiFile(filename, workspace) && !mapping.containsKey(filename)) {
+                    discovered.put(filename, new Maybe<Boolean>(true));
+                }
+            } catch (Exception ex) {
+                discovered.put(filename, new Maybe<Boolean>(new ErrorMessage(
+                        String.format("Filed to parse a discovered file '%s': %s", filename, ex.getMessage()))));
             }
         }
-        logger.log(String.format("Discovered OpenAPI files: %s", String.join(", ", found)));
-        return found.toArray(new String[found.size()]);
+        logger.log(String.format("Discovered OpenAPI files: %s", String.join(", ", discovered.keySet())));
+
+        return discovered;
     }
 
     private String[] findOpenapiFiles(Workspace workspace, OpenApiFinder finder, String[] search)
@@ -248,7 +274,7 @@ public class Auditor {
         return collection.getResult().desc.id;
     }
 
-    private RemoteApiMap uploadFilesToCollection(String[] filenames, Workspace workspace, String collectionId)
+    private RemoteApiMap uploadFilesToCollection(ArrayList<String> filenames, Workspace workspace, String collectionId)
             throws IOException, AuditException {
         RemoteApiMap uploaded = new RemoteApiMap();
 
