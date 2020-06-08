@@ -139,9 +139,21 @@ public class Auditor {
         for (Map.Entry<String, String> entry : mapping.entrySet()) {
             String filename = entry.getKey();
             String apiId = entry.getValue();
-            String json = parseFile(filename, workspace);
-            Maybe<RemoteApi> api = Client.updateApi(apiId, json, apiKey, logger);
-            uploaded.put(filename, api);
+            Maybe<Boolean> isOpenApi = isOpenApiFile(filename, workspace);
+            if (isOpenApi.isOk() && isOpenApi.getResult() == true) {
+                // this is good OpenAPIFile, upload it
+                String json = parseFile(filename, workspace);
+                Maybe<RemoteApi> api = Client.updateApi(apiId, json, apiKey, logger);
+                uploaded.put(filename, api);
+            } else if (isOpenApi.isOk() && isOpenApi.getResult() == false) {
+                // not an OpenAPI file, but it is mapped so let's put an error message for it
+                uploaded.put(filename, new Maybe<>(new ErrorMessage(
+                        String.format("Mapped file '%s' API ID '%s' is not an OpenAPI file", filename, apiId))));
+            } else {
+                // failed to parse
+                uploaded.put(filename, new Maybe<>(new ErrorMessage(String.format("Mapped file '%s' API ID '%s': %s",
+                        filename, apiId, isOpenApi.getError().getMessage()))));
+            }
         }
 
         return uploaded;
@@ -217,13 +229,13 @@ public class Auditor {
         String[] filenames = findOpenapiFiles(workspace, finder, search);
         logger.log(String.format("Files matching search criteria: %s", String.join(", ", filenames)));
         for (String filename : filenames) {
-            try {
-                if (isOpenApiFile(filename, workspace) && !mapping.containsKey(filename)) {
-                    discovered.put(filename, new Maybe<Boolean>(true));
+            if (!mapping.containsKey(filename)) {
+                Maybe<Boolean> openapi = isOpenApiFile(filename, workspace);
+                // put discovered OpenAPI files onto the list of discovered ones
+                // also add there parsing errors
+                if (openapi.isOk() && openapi.getResult() == true || openapi.isError()) {
+                    discovered.put(filename, openapi);
                 }
-            } catch (Exception ex) {
-                discovered.put(filename, new Maybe<Boolean>(new ErrorMessage(
-                        String.format("Filed to parse a discovered file '%s': %s", filename, ex.getMessage()))));
             }
         }
         logger.log(String.format("Discovered OpenAPI files: %s", String.join(", ", discovered.keySet())));
@@ -238,8 +250,7 @@ public class Auditor {
         return openApiFiles;
     }
 
-    private static boolean isOpenApiFile(String filename, Workspace workspace)
-            throws JsonParseException, JsonMappingException, IOException, InterruptedException {
+    private static Maybe<Boolean> isOpenApiFile(String filename, Workspace workspace) {
         ObjectMapper mapper;
         if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
             mapper = new ObjectMapper(new YAMLFactory());
@@ -247,8 +258,13 @@ public class Auditor {
             mapper = new ObjectMapper();
         }
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        OpenApiFile openApiFile = mapper.readValue(workspace.read(filename), OpenApiFile.class);
-        return openApiFile.isOpenApi();
+        try {
+            OpenApiFile openApiFile = mapper.readValue(workspace.read(filename), OpenApiFile.class);
+            return new Maybe<Boolean>(openApiFile.isOpenApi());
+        } catch (Exception ex) {
+            return new Maybe<Boolean>(
+                    new ErrorMessage(String.format("Filed to parse a file '%s': %s", filename, ex.getMessage())));
+        }
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD")
