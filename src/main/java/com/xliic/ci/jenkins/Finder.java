@@ -9,13 +9,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.xliic.cicd.audit.OpenApiFinder;
+
 import hudson.FilePath;
 import hudson.remoting.VirtualChannel;
 import hudson.util.DirScanner;
 import hudson.util.FileVisitor;
 import jenkins.MasterToSlaveFileCallable;
-
-import com.xliic.ci.audit.OpenApiFinder;
 
 class Finder extends MasterToSlaveFileCallable<String[]> implements OpenApiFinder {
     private static final long serialVersionUID = 1L;

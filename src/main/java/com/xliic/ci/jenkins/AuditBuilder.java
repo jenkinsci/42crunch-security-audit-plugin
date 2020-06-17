@@ -16,11 +16,11 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.xliic.ci.audit.AuditException;
-import com.xliic.ci.audit.Auditor;
-import com.xliic.ci.audit.Logger;
-import com.xliic.ci.audit.Secret;
-import com.xliic.ci.audit.Workspace;
+import com.xliic.cicd.audit.AuditException;
+import com.xliic.cicd.audit.Auditor;
+import com.xliic.cicd.audit.Logger;
+import com.xliic.cicd.audit.Secret;
+import com.xliic.common.Workspace;
 
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
