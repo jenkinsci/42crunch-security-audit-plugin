@@ -9,13 +9,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+
 import com.xliic.cicd.audit.AuditException;
 import com.xliic.cicd.audit.Auditor;
 import com.xliic.cicd.audit.Logger;
@@ -136,24 +140,25 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return true;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item item, @QueryParameter String credentialsId) {
+        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item ancestor,
+                @QueryParameter String credentialsId) {
+
             StandardListBoxModel result = new StandardListBoxModel();
 
-            if (item == null) {
+            if (ancestor == null) {
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return result.includeCurrentValue(credentialsId);
                 }
             } else {
-                if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+                if (!ancestor.hasPermission(Item.EXTENDED_READ)
+                        && !ancestor.hasPermission(CredentialsProvider.USE_ITEM)) {
                     return result.includeCurrentValue(credentialsId);
                 }
             }
 
-            return result
-                    .includeMatchingAs(ACL.SYSTEM, Jenkins.get(), ApiKey.class,
-                            Collections.<DomainRequirement>emptyList(), CredentialsMatchers.always())
+            return result.includeMatchingAs(ACL.SYSTEM, ancestor, ApiKey.class,
+                    Collections.<DomainRequirement>emptyList(), CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
-
         }
     }
 
@@ -166,6 +171,16 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
 
         @Override
         public void log(final String message) {
+            logger.println(message);
+        }
+
+        @Override
+        public void progress(String message) {
+            logger.println(message);
+        }
+
+        @Override
+        public void report(String message) {
             logger.println(message);
         }
     }
@@ -192,8 +207,9 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         }
 
         @Override
-        public String read(String filename) throws IOException, InterruptedException {
-            FilePath filepath = new FilePath(workspace, filename);
+        public String read(URI uri) throws IOException, InterruptedException {
+
+            FilePath filepath = new FilePath(workspace, uri.getPath());
 
             InputStream is = filepath.read();
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -205,19 +221,33 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             buffer.flush();
 
             return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+
         }
 
         @Override
-        public boolean exists(String filename) throws IOException, InterruptedException {
-            FilePath filepath = new FilePath(workspace, filename);
+        public boolean exists(URI file) throws IOException, InterruptedException {
+            FilePath filepath = new FilePath(workspace, file.getPath());
             return filepath.exists();
         }
 
         @Override
-        public String absolutize(String filename) throws IOException, InterruptedException {
-            FilePath filepath = new FilePath(workspace, filename);
-            return filepath.absolutize().getRemote();
+        public URI resolve(String filename) {
+            try {
+                String safeFilename = new URI(null, filename, null).getRawSchemeSpecificPart();
+                return workspace.toURI().resolve(safeFilename);
+            } catch (IOException | InterruptedException | URISyntaxException e) {
+                throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
+            }
         }
-    }
 
+        @Override
+        public URI relativize(URI uri) {
+            try {
+                return workspace.toURI().relativize(uri);
+            } catch (IOException | InterruptedException e) {
+                throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
+            }
+        }
+
+    }
 }

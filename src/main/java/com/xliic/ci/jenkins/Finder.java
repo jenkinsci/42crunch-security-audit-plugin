@@ -7,7 +7,9 @@ package com.xliic.ci.jenkins;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.xliic.cicd.audit.OpenApiFinder;
 
@@ -17,7 +19,7 @@ import hudson.util.DirScanner;
 import hudson.util.FileVisitor;
 import jenkins.MasterToSlaveFileCallable;
 
-class Finder extends MasterToSlaveFileCallable<String[]> implements OpenApiFinder {
+class Finder extends MasterToSlaveFileCallable<List<URI>> implements OpenApiFinder {
     private static final long serialVersionUID = 1L;
     private FilePath workspace;
     private String includes = "";
@@ -42,23 +44,24 @@ class Finder extends MasterToSlaveFileCallable<String[]> implements OpenApiFinde
         this.excludes = String.join(",", excludes);
     }
 
-    public String[] find() throws IOException, InterruptedException {
-        String[] openApiFiles = workspace.act(this);
+    @Override
+    public List<URI> find() throws IOException, InterruptedException {
+        List<URI> openApiFiles = workspace.act(this);
         return openApiFiles;
     }
 
     @Override
-    public String[] invoke(File workspace, VirtualChannel channel) throws IOException, InterruptedException {
-        ArrayList<String> found = new ArrayList<String>();
+    public List<URI> invoke(File workspace, VirtualChannel channel) throws IOException, InterruptedException {
+        ArrayList<URI> found = new ArrayList<URI>();
         DirScanner.Glob scanner = new DirScanner.Glob(includes, excludes);
         scanner.scan(workspace, new FileVisitor() {
             @Override
             public void visit(File f, String relativePath) throws IOException {
-                found.add(relativePath);
+                found.add(f.toURI());
             }
         });
 
-        return found.toArray(new String[found.size()]);
+        return found;
     }
 
 }
