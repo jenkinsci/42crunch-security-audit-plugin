@@ -12,7 +12,6 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
@@ -134,11 +133,11 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
         if (trimmedUrl != null) {
             try {
-                URL url = new URL(trimmedUrl);
-                String validUrl = String.format("%s://%s", url.getProtocol(), url.getAuthority());
+                URI url = new URI(trimmedUrl);
+                String validUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
                 auditor.setPlatformUrl(validUrl);
                 logger.log("Set platform URL to: " + validUrl);
-            } catch (MalformedURLException e) {
+            } catch (URISyntaxException e) {
                 throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
         } else {
@@ -194,8 +193,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             String trimmedUrl = Util.fixEmptyAndTrim(value);
             if (trimmedUrl != null) {
                 try {
-                    new URL(trimmedUrl);
-                } catch (MalformedURLException e) {
+                    new URI(trimmedUrl);
+                } catch (URISyntaxException e) {
                     return FormValidation.error("Malformed URL");
                 }
             }
