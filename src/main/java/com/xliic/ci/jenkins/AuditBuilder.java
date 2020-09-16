@@ -9,11 +9,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -24,6 +25,7 @@ import com.xliic.cicd.audit.AuditException;
 import com.xliic.cicd.audit.Auditor;
 import com.xliic.cicd.audit.Logger;
 import com.xliic.cicd.audit.Secret;
+import com.xliic.cicd.audit.client.ClientConstants;
 import com.xliic.common.Workspace;
 
 import org.jenkinsci.Symbol;
@@ -37,6 +39,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.ProxyConfiguration;
+import hudson.Util;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
 import hudson.model.Run;
@@ -44,6 +47,7 @@ import hudson.model.TaskListener;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
@@ -53,12 +57,14 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private int minScore;
     private String credentialsId;
     private String collectionName;
+    private String platformUrl;
 
     @DataBoundConstructor
-    public AuditBuilder(String credentialsId, int minScore, String collectionName) {
+    public AuditBuilder(String credentialsId, int minScore, String collectionName, String platformUrl) {
         this.credentialsId = credentialsId;
         this.minScore = minScore;
         this.collectionName = collectionName;
+        this.platformUrl = platformUrl;
     }
 
     public String getCredentialsId() {
@@ -88,6 +94,15 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.collectionName = collectionName;
     }
 
+    public String getPlatformUrl() {
+        return platformUrl;
+    }
+
+    @DataBoundSetter
+    public void setPlatformUrl(String platformUrl) {
+        this.platformUrl = platformUrl;
+    }
+
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
@@ -114,6 +129,20 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
         if (proxyConfiguration != null) {
             auditor.setProxy(proxyConfiguration.name, proxyConfiguration.port);
+        }
+
+        String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
+        if (trimmedUrl != null) {
+            try {
+                URL url = new URL(trimmedUrl);
+                String validUrl = String.format("%s://%s", url.getProtocol(), url.getAuthority());
+                auditor.setPlatformUrl(validUrl);
+                logger.log("Set platform URL to: " + validUrl);
+            } catch (MalformedURLException e) {
+                throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+            }
+        } else {
+            auditor.setPlatformUrl(ClientConstants.PLATFORM_URL);
         }
 
         try {
@@ -159,6 +188,19 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return result.includeMatchingAs(ACL.SYSTEM, ancestor, ApiKey.class,
                     Collections.<DomainRequirement>emptyList(), CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
+        }
+
+        public FormValidation doCheckPlatformUrl(@QueryParameter String value) {
+            String trimmedUrl = Util.fixEmptyAndTrim(value);
+            if (trimmedUrl != null) {
+                try {
+                    new URL(trimmedUrl);
+                } catch (MalformedURLException e) {
+                    return FormValidation.error("Malformed URL");
+                }
+            }
+
+            return FormValidation.ok();
         }
     }
 

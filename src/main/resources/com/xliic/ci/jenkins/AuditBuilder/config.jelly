@@ -9,4 +9,11 @@
     <f:entry title="Name for the API Collection" field="collectionName">
         <f:textbox default="Jenkins" />
     </f:entry>
+    <f:section>
+        <f:advanced>
+            <f:entry title="Platform URL" field="platformUrl">
+                <f:textbox />
+            </f:entry>
+        </f:advanced>
+    </f:section>
 </j:jelly>
