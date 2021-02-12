@@ -9,7 +9,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +56,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String credentialsId;
     private String collectionName;
     private String platformUrl;
+    private String logLevel;
 
     @DataBoundConstructor
     public AuditBuilder(String credentialsId, int minScore, String collectionName, String platformUrl) {
@@ -102,6 +102,18 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.platformUrl = platformUrl;
     }
 
+    public String getLogLevel() {
+        if (logLevel == null) {
+            return "INFO";
+        }
+        return logLevel;
+    }
+
+    @DataBoundSetter
+    public void setLogLevel(String logLevel) {
+        this.logLevel = logLevel;
+    }
+
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
@@ -119,7 +131,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("Invalid format of API Token");
         }
 
-        final LoggerImpl logger = new LoggerImpl(listener.getLogger());
+        final LoggerImpl logger = new LoggerImpl(listener.getLogger(), getLogLevel());
         final WorkspaceImpl auditWorkspace = new WorkspaceImpl(workspace);
         final Finder finder = new Finder(workspace);
 
@@ -136,7 +148,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 URI url = new URI(trimmedUrl);
                 String validUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
                 auditor.setPlatformUrl(validUrl);
-                logger.log("Set platform URL to: " + validUrl);
             } catch (URISyntaxException e) {
                 throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
@@ -205,24 +216,70 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
 
     static class LoggerImpl implements Logger {
         private PrintStream logger;
+        private int level;
 
-        LoggerImpl(final PrintStream logger) {
+        LoggerImpl(final PrintStream logger, String logLevel) {
             this.logger = logger;
+            switch (logLevel.toUpperCase()) {
+                case "FATAL":
+                    this.level = Logger.Level.FATAL;
+                    break;
+                case "ERROR":
+                    this.level = Logger.Level.ERROR;
+                    break;
+                case "WARN":
+                    this.level = Logger.Level.WARN;
+                    break;
+                case "INFO":
+                    this.level = Logger.Level.INFO;
+                    break;
+                case "DEBUG":
+                    this.level = Logger.Level.DEBUG;
+                    break;
+                default:
+                    logger.println("Unknown log level specified, setting log level to INFO");
+                    this.level = Logger.Level.INFO;
+            }
         }
 
         @Override
-        public void log(final String message) {
-            logger.println(message);
+        public void setLevel(int level) {
+            this.level = level;
         }
 
         @Override
-        public void progress(String message) {
-            logger.println(message);
+        public void fatal(String message) {
+            if (Logger.Level.FATAL >= level) {
+                logger.println(message);
+            }
         }
 
         @Override
-        public void report(String message) {
-            logger.println(message);
+        public void error(String message) {
+            if (Logger.Level.ERROR >= level) {
+                logger.println(message);
+            }
+        }
+
+        @Override
+        public void warn(String message) {
+            if (Logger.Level.WARN >= level) {
+                logger.println(message);
+            }
+        }
+
+        @Override
+        public void info(String message) {
+            if (Logger.Level.INFO >= level) {
+                logger.println(message);
+            }
+        }
+
+        @Override
+        public void debug(String message) {
+            if (Logger.Level.DEBUG >= level) {
+                logger.println(message);
+            }
         }
     }
 

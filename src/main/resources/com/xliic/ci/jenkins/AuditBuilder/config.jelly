@@ -14,6 +14,15 @@
             <f:entry title="Platform URL" field="platformUrl">
                 <f:textbox />
             </f:entry>
+            <f:entry name="logLevel" title="Log Level" field="logLevel">
+                <select name="logLevel">
+                    <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
+                    <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
+                    <option value="WARN" selected="${instance.logLevel == 'WARN' ? 'true' : null}">WARN</option>
+                    <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
+                    <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
+                 </select>
+            </f:entry>
         </f:advanced>
     </f:section>
 </j:jelly>
