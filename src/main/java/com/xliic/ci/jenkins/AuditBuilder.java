@@ -136,6 +136,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         final Finder finder = new Finder(workspace);
 
         Auditor auditor = new Auditor(finder, logger, apiKey);
+        auditor.setUserAgent("Jenkins-CICD/1.0");
 
         ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
         if (proxyConfiguration != null) {
