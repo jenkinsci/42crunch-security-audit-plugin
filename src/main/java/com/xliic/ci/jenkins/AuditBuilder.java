@@ -147,8 +147,11 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         if (trimmedUrl != null) {
             try {
                 URI url = new URI(trimmedUrl);
-                String validUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
-                auditor.setPlatformUrl(validUrl);
+                if (url.getScheme() == null || !url.getScheme().equals("https")) {
+                    throw new AbortException(
+                            String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
+                }
+                auditor.setPlatformUrl(String.format("%s://%s", url.getScheme(), url.getRawAuthority()));
             } catch (URISyntaxException e) {
                 throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
