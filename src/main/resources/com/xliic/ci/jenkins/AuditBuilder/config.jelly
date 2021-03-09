@@ -14,7 +14,7 @@
             <f:entry title="Platform URL" field="platformUrl">
                 <f:textbox />
             </f:entry>
-            <f:entry name="logLevel" title="Log Level" field="logLevel">
+            <f:entry name="logLevel" title="Log level" field="logLevel">
                 <select name="logLevel">
                     <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
                     <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
