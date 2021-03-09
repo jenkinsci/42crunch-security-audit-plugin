@@ -1,12 +1,12 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-    <f:entry title="API Token" field="credentialsId">
+    <f:entry title="API token" field="credentialsId">
         <c:select/>
     </f:entry>
-    <f:entry title="Min Assessment Score" field="minScore">
+    <f:entry title="Minimum audit score" field="minScore">
         <f:number default="75" />
     </f:entry>
-    <f:entry title="Name for the API Collection" field="collectionName">
+    <f:entry title="Name for the API collection" field="collectionName">
         <f:textbox default="Jenkins" />
     </f:entry>
     <f:section>
@@ -16,11 +16,11 @@
             </f:entry>
             <f:entry name="logLevel" title="Log Level" field="logLevel">
                 <select name="logLevel">
-                    <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
-                    <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
-                    <option value="WARN" selected="${instance.logLevel == 'WARN' ? 'true' : null}">WARN</option>
-                    <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
                     <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
+                    <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
+                    <option value="WARN" selected="${instance.logLevel == 'WARN' ? 'true' : null}">WARN</option>
+                    <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
+                    <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
                  </select>
             </f:entry>
         </f:advanced>
