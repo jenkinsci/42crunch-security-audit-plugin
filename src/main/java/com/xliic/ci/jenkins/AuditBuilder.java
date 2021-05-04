@@ -20,10 +20,10 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 
 import com.xliic.cicd.audit.AuditException;
+import com.xliic.cicd.audit.AuditResults;
 import com.xliic.cicd.audit.Auditor;
 import com.xliic.cicd.audit.Logger;
 import com.xliic.cicd.audit.Secret;
-import com.xliic.cicd.audit.client.ClientConstants;
 import com.xliic.common.Workspace;
 
 import org.jenkinsci.Symbol;
@@ -33,11 +33,13 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.ProxyConfiguration;
 import hudson.Util;
+import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
 import hudson.model.Run;
@@ -52,17 +54,17 @@ import jenkins.tasks.SimpleBuildStep;
 
 public class AuditBuilder extends Builder implements SimpleBuildStep {
 
-    private int minScore;
+    private int minScore = 75;
     private String credentialsId;
-    private String collectionName;
-    private String platformUrl;
+    private String platformUrl = "https://platform.42crunch.com";
     private String logLevel;
+    private String repositoryName = "${GIT_URL}";
+    private String branchName = "${GIT_LOCAL_BRANCH}";
 
     @DataBoundConstructor
-    public AuditBuilder(String credentialsId, int minScore, String collectionName, String platformUrl) {
+    public AuditBuilder(String credentialsId, int minScore, String platformUrl) {
         this.credentialsId = credentialsId;
         this.minScore = minScore;
-        this.collectionName = collectionName;
         this.platformUrl = platformUrl;
     }
 
@@ -82,15 +84,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setMinScore(int minScore) {
         this.minScore = minScore;
-    }
-
-    public String getCollectionName() {
-        return collectionName;
-    }
-
-    @DataBoundSetter
-    public void setCollectionName(String collectionName) {
-        this.collectionName = collectionName;
     }
 
     public String getPlatformUrl() {
@@ -114,9 +107,55 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.logLevel = logLevel;
     }
 
+    public String getRepositoryName() {
+        return repositoryName;
+    }
+
+    @DataBoundSetter
+    public void setRepositoryName(String repositoryName) {
+        this.repositoryName = repositoryName;
+    }
+
+    public String getBranchName() {
+        return branchName;
+    }
+
+    @DataBoundSetter
+    public void setBranchName(String branchName) {
+        this.branchName = branchName;
+    }
+
+    private String actualBranchName(Run<?, ?> build, TaskListener listener, Logger logger)
+            throws IOException, InterruptedException {
+        if (build instanceof AbstractBuild) {
+            EnvVars env = build.getEnvironment(listener);
+            env.overrideAll(((AbstractBuild) build).getBuildVariables());
+            String expanded = env.expand(branchName);
+            logger.debug(String.format("Expanded branchName parameter '%s' to '%s'", branchName, expanded));
+            return expanded;
+        } else {
+            return branchName;
+        }
+    }
+
+    private String actualRepositoryName(Run<?, ?> build, TaskListener listener, Logger logger)
+            throws IOException, InterruptedException {
+        if (build instanceof AbstractBuild) {
+            EnvVars env = build.getEnvironment(listener);
+            env.overrideAll(((AbstractBuild) build).getBuildVariables());
+            String expanded = env.expand(repositoryName);
+            logger.debug(String.format("Expanded repositoryName parameter '%s' to '%s'", repositoryName, expanded));
+            return expanded;
+        } else {
+            return repositoryName;
+        }
+    }
+
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
+
+        final LoggerImpl logger = new LoggerImpl(listener.getLogger(), getLogLevel());
 
         ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
                 Collections.<DomainRequirement>emptyList());
@@ -131,18 +170,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             throw new AbortException("Invalid format of API Token");
         }
 
-        final LoggerImpl logger = new LoggerImpl(listener.getLogger(), getLogLevel());
-        final WorkspaceImpl auditWorkspace = new WorkspaceImpl(workspace);
-        final Finder finder = new Finder(workspace);
-
-        Auditor auditor = new Auditor(finder, logger, apiKey);
-        auditor.setUserAgent("Jenkins-CICD/1.0");
-
-        ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
-        if (proxyConfiguration != null) {
-            auditor.setProxy(proxyConfiguration.name, proxyConfiguration.port);
-        }
-
         String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
         if (trimmedUrl != null) {
             try {
@@ -151,23 +178,65 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                     throw new AbortException(
                             String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
                 }
-                auditor.setPlatformUrl(String.format("%s://%s", url.getScheme(), url.getRawAuthority()));
+                this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
             } catch (URISyntaxException e) {
                 throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
-        } else {
-            auditor.setPlatformUrl(ClientConstants.PLATFORM_URL);
+        }
+
+        String actualRepositoryName = actualRepositoryName(run, listener, logger);
+        if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
+            throw new AbortException(String.format("Parameter repositoryName must be set"));
+        }
+
+        String actualBranchName = actualBranchName(run, listener, logger);
+        if (actualBranchName == null || actualBranchName.length() == 0) {
+            throw new AbortException(String.format("Parameter branchName must be set"));
+        }
+
+        final WorkspaceImpl auditWorkspace = new WorkspaceImpl(workspace);
+        final Finder finder = new Finder(workspace);
+
+        Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
+
+        auditor.setMinScore(minScore);
+
+        ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
+        if (proxyConfiguration != null) {
+            auditor.setProxy(proxyConfiguration.name, proxyConfiguration.port);
         }
 
         try {
-            String failure = auditor.audit(auditWorkspace, collectionName, minScore);
-            if (failure != null) {
-                throw new AbortException(failure);
-
+            AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, actualBranchName);
+            displayReport(results, logger, auditWorkspace);
+            if (results.failures > 0) {
+                throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
+                        results.failures, results.summary.size()));
+            } else if (results.summary.size() == 0) {
+                throw new AbortException("No OpenAPI files found.");
             }
         } catch (AuditException ex) {
             throw new AbortException(ex.getMessage());
         }
+    }
+
+    private void displayReport(AuditResults results, Logger logger, Workspace workspace) {
+        results.summary.forEach((file, summary) -> {
+            logger.error(String.format("Audited %s, the API score is %d", workspace.relativize(file).getPath(),
+                    summary.score));
+            if (summary.failures.length > 0) {
+                for (String failure : summary.failures) {
+                    logger.error("    " + failure);
+                }
+            } else {
+                logger.error("    No blocking issues found.");
+            }
+            if (summary.reportUrl != null) {
+                logger.error("    Details:");
+                logger.error(String.format("    %s", summary.reportUrl));
+            }
+            logger.error("");
+        });
     }
 
     @Symbol("audit")

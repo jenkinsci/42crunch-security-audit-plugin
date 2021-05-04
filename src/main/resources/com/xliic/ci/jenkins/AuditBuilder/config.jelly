@@ -6,14 +6,12 @@
     <f:entry title="Minimum audit score" field="minScore">
         <f:number default="75" />
     </f:entry>
-    <f:entry title="Name for the API collection" field="collectionName">
-        <f:textbox default="Jenkins" />
-    </f:entry>
     <f:section>
         <f:advanced>
             <f:entry title="Platform URL" field="platformUrl">
-                <f:textbox />
+                <f:textbox default="https://platform.42crunch.com" />
             </f:entry>
+            
             <f:entry name="logLevel" title="Log level" field="logLevel">
                 <select name="logLevel">
                     <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
@@ -22,6 +20,14 @@
                     <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
                     <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
                  </select>
+            </f:entry>
+
+            <f:entry title="Repository Name" field="repositoryName">
+                <f:textbox default="$${GIT_URL}" />
+            </f:entry>
+
+            <f:entry title="Branch Name" field="branchName">
+                <f:textbox default="$${GIT_LOCAL_BRANCH}" />
             </f:entry>
         </f:advanced>
     </f:section>
