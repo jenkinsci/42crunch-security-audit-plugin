@@ -24,6 +24,7 @@ import com.xliic.cicd.audit.AuditResults;
 import com.xliic.cicd.audit.Auditor;
 import com.xliic.cicd.audit.Logger;
 import com.xliic.cicd.audit.Secret;
+import com.xliic.cicd.audit.SharingType;
 import com.xliic.common.Workspace;
 
 import org.jenkinsci.Symbol;
@@ -60,6 +61,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String logLevel;
     private String repositoryName = "${GIT_URL}";
     private String branchName = "${GIT_LOCAL_BRANCH}";
+    private String shareEveryone;
 
     @DataBoundConstructor
     public AuditBuilder(String credentialsId, int minScore, String platformUrl) {
@@ -123,6 +125,18 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setBranchName(String branchName) {
         this.branchName = branchName;
+    }
+
+    public String getShareEveryone() {
+        if (shareEveryone == null) {
+            return "OFF";
+        }
+        return shareEveryone;
+    }
+
+    @DataBoundSetter
+    public void setShareEveryone(String shareEveryone) {
+        this.shareEveryone = shareEveryone;
     }
 
     private String actualBranchName(Run<?, ?> build, TaskListener listener, Logger logger)
@@ -200,6 +214,12 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
 
         auditor.setMinScore(minScore);
+
+        if (getShareEveryone().equals("READ_ONLY")) {
+            auditor.setShareEveryone(SharingType.READ_ONLY);
+        } else if (getShareEveryone().equals("READ_WRITE")) {
+            auditor.setShareEveryone(SharingType.READ_WRITE);
+        }
 
         ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
         if (proxyConfiguration != null) {

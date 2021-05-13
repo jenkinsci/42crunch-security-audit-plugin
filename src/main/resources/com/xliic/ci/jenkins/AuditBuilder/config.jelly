@@ -29,6 +29,16 @@
             <f:entry title="Branch Name" field="branchName">
                 <f:textbox default="$${GIT_LOCAL_BRANCH}" />
             </f:entry>
+
+            <h4>Sharing of new API collections</h4>
+            <f:entry name="shareEveryone" title="Share with everyone" field="shareEveryone">
+                <select name="shareEveryone">
+                    <option value="OFF" selected="${instance.shareEveryone == 'OFF' ? 'true' : null}">Off</option>
+                    <option value="READ_ONLY" selected="${instance.shareEveryone == 'READ_ONLY' ? 'true' : null}">Read only</option>
+                    <option value="READ_WRITE" selected="${instance.shareEveryone == 'READ_WRITE' ? 'true' : null}">Read / write</option>
+                 </select>
+            </f:entry>
+
         </f:advanced>
     </f:section>
 </j:jelly>
