@@ -2,7 +2,7 @@
 
 The REST API Static Security Testing plugin lets you add an automatic static application security testing (SAST) task to your CI/CD pipelines. The task checks your OpenAPI files for their quality and security from a simple Git push to your project repository when the CI/CD pipeline runs.
 
-The plugin is powered by 42Crunch [API Contract Security Audit](https://docs.42crunch.com/latest/content/concepts/api_contract_security_audit.htm). Security Audit performs a static analysis of the API definition that includes more than 200 checks on best practices and potential vulnerabilities on how the API defines authentication, authorization, transport, and data coming in and going out. For more details on the checks, see [API Security Encyclopedia](https://apisecurity.io/encyclopedia/content/api-security-encyclopedia.htm).
+The plugin is powered by 42Crunch [API Security Audit](https://docs.42crunch.com/latest/content/concepts/api_contract_security_audit.htm). Security Audit performs a static analysis of the API definition that includes more than 200 checks on best practices and potential vulnerabilities on how the API defines authentication, authorization, transport, and data coming in and going out. For more details on the checks, see [API Security Encyclopedia](https://apisecurity.io/encyclopedia/content/api-security-encyclopedia.htm).
 
 As a result of the security testing, your APIs get an audit score, with 100 points meaning the most secure, best defined API. By default, the threshold score for the build task to pass is 75 points for each audited API, but you can change the minimum score in the settings of the pipeline task.
 
@@ -23,11 +23,17 @@ For more details, see the [full documentation](https://docs.42crunch.com/latest/
 
 ## Discover APIs
 
-By default, the plugin locates all OpenAPI files in your project and submits them for static security testing. You can include or exclude specific paths from the discovery phase can omit the discovery phase completely by adding a task configuration file `42c-conf.yaml` in the root of your repository and specifying rules for the discovery phase. For more details, see the [documentation](https://docs.42crunch.com/latest/content/tasks/integrate_jenkins.htm).
+By default, the task locates all OpenAPI files in your project and submits them for static security testing. You can include or exclude specific paths from the discovery phase can omit the discovery phase completely by adding a task configuration file `42c-conf.yaml` in the root of your repository and specifying rules for the discovery phase. For more details, see the [documentation](https://docs.42crunch.com/latest/content/tasks/integrate_jenkins.htm).
 
-## Create per-branch reports
+All discovered APIs are uploaded to an API collection in 42Crunch Platform. This collection is created at the
+first run of the task, and is tied to the repository name and branch name it was created from.
+During the subsequent task runs, the APIs in the collection are kept in sync with the changes in your repository.
 
-During the discovery phase, the plugin automatically creates an API collection in 42Crunch Platform and uploads the audited APIs and reports in there. The default collection name is `Jenkins`, but you can change this in the job settings.
+The task uses the parameters `repositoryName` and `branchName` to access infromation about respository name and branch name.
+Depending on your Jenkins configuration these must be changed to allow task to access repository name and branch name.
+
+By default `repositoryName` uses `${GIT_URL}` environment variable and `branchName` uses `${GIT_LOCAL_BRANCH}`.
+If you are using "Multibranch Pipeline" and Jenkinsfile you have to explicitly pass these parameters setting `repositoryName` to `${env.GIT_URL}` and `branchName` to `${env.BRANCH_NAME}`.
 
 ## Fine-tune the build task
 
@@ -37,4 +43,10 @@ For more details, see the [documentation](https://docs.42crunch.com/latest/conte
 
 ## Support
 
-If you run into an issue, or have a question not answered here, you can create a support ticket at [support.42crunch.com](https://support.42crunch.com/).
+The plugin is maintained by support@42crunch.com. If you run into an issue, or have a question not answered here, you can create a support ticket at [support.42crunch.com](https://support.42crunch.com/).
+
+If you’re reporting an issue, please include:
+
+- the version of the plugin
+- relevant logs and error messages
+- steps to reproduce
