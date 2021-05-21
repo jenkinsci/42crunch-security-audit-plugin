@@ -25,15 +25,11 @@ For more details, see the [full documentation](https://docs.42crunch.com/latest/
 
 By default, the task locates all OpenAPI files in your project and submits them for static security testing. You can include or exclude specific paths from the discovery phase can omit the discovery phase completely by adding a task configuration file `42c-conf.yaml` in the root of your repository and specifying rules for the discovery phase. For more details, see the [documentation](https://docs.42crunch.com/latest/content/tasks/integrate_jenkins.htm).
 
-All discovered APIs are uploaded to an API collection in 42Crunch Platform. This collection is created at the
-first run of the task, and is tied to the repository name and branch name it was created from.
-During the subsequent task runs, the APIs in the collection are kept in sync with the changes in your repository.
+All discovered APIs are uploaded to an API collection in 42Crunch Platform. This collection is created at the first run of the task, and is tied to the repository name and branch name it was created from. During the subsequent task runs, the APIs in the collection are kept in sync with the changes in your repository.
 
-The task uses the parameters `repositoryName` and `branchName` to access infromation about respository name and branch name.
-Depending on your Jenkins configuration these must be changed to allow task to access repository name and branch name.
+To be able to correctly match new API collections to your source control, the task must know what repository and branch the API files it discovers come from. For this, the task uses the parameters `repositoryName` and `branchName`. By default, `repositoryName` uses the environment variable `${GIT_URL}` and `branchName` the variable `${GIT_LOCAL_BRANCH}`. If you are using Jenkinsfile to configure the task on your pipeline, you must explicitly specify the parameters and values in your configuration.
 
-By default `repositoryName` uses `${GIT_URL}` environment variable and `branchName` uses `${GIT_LOCAL_BRANCH}`.
-If you are using "Multibranch Pipeline" and Jenkinsfile you have to explicitly pass these parameters setting `repositoryName` to `${env.GIT_URL}` and `branchName` to `${env.BRANCH_NAME}`.
+In most cases, these default variables are correctly populated, but depending on other plugins you use in your Jenkins configuration, you may have to change the values to match the environment variables these other plugins use so that the task gets the correct repository and branch names.
 
 ## Fine-tune the build task
 
@@ -45,8 +41,7 @@ For more details, see the [documentation](https://docs.42crunch.com/latest/conte
 
 The plugin is maintained by support@42crunch.com. If you run into an issue, or have a question not answered here, you can create a support ticket at [support.42crunch.com](https://support.42crunch.com/).
 
-If you’re reporting an issue, please include:
-
-- the version of the plugin
-- relevant logs and error messages
-- steps to reproduce
+If you're reporting an issue, do include:
+- The version of the Jenkins plugin
+- Relevant logs and error messages
+- Steps to reproduce the issue
