@@ -22,11 +22,11 @@
                  </select>
             </f:entry>
 
-            <f:entry title="Repository Name" field="repositoryName">
+            <f:entry title="Repository name" field="repositoryName">
                 <f:textbox default="$${GIT_URL}" />
             </f:entry>
 
-            <f:entry title="Branch Name" field="branchName">
+            <f:entry title="Branch name" field="branchName">
                 <f:textbox default="$${GIT_LOCAL_BRANCH}" />
             </f:entry>
 
