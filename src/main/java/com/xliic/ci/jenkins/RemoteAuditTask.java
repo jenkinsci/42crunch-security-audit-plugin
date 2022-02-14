@@ -71,7 +71,10 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
 
         auditor.setMinScore(minScore);
-        auditor.setDefaultCollectionName(defaultCollectionName);
+
+        if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
+            auditor.setDefaultCollectionName(defaultCollectionName);
+        }
 
         if (shareEveryone.equals("READ_ONLY")) {
             auditor.setShareEveryone(SharingType.READ_ONLY);
@@ -92,6 +95,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         try {
             AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, reference);
             displayReport(results, logger, auditWorkspace);
+            listener.getLogger().flush();
             if (results.failures > 0) {
                 throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
                         results.failures, results.summary.size()));
