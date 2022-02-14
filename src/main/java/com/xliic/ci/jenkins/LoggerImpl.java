@@ -1,7 +1,7 @@
 package com.xliic.ci.jenkins;
 
 import java.io.PrintStream;
-import com.xliic.cicd.audit.Logger;
+import com.xliic.cicd.common.Logger;
 
 public class LoggerImpl implements Logger {
     private PrintStream logger;

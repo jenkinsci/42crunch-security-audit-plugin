@@ -11,7 +11,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.xliic.cicd.audit.OpenApiFinder;
+import com.xliic.cicd.common.OpenApiFinder;
 
 import hudson.FilePath;
 import hudson.remoting.VirtualChannel;

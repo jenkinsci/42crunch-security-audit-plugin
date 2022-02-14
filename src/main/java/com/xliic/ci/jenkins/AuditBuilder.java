@@ -15,7 +15,7 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.xliic.cicd.audit.Logger;
+import com.xliic.cicd.common.Logger;
 import com.xliic.cicd.audit.Secret;
 
 import org.jenkinsci.Symbol;
@@ -51,7 +51,12 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String platformUrl = "https://platform.42crunch.com";
     private String logLevel;
     private String repositoryName = "${GIT_URL}";
-    private String branchName = "${GIT_LOCAL_BRANCH}";
+    private String branchName = "";
+    private String tagName = "";
+    private String prId = "";
+    private String prTargetBranch = "";
+    private String defaultCollectionName = "";
+    private String rootDirectory = "";
     private String shareEveryone;
 
     @DataBoundConstructor
@@ -118,6 +123,51 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.branchName = branchName;
     }
 
+    public String getTagName() {
+        return tagName;
+    }
+
+    @DataBoundSetter
+    public void setTagName(String tagName) {
+        this.tagName = tagName;
+    }
+
+    public String getPrId() {
+        return prId;
+    }
+
+    @DataBoundSetter
+    public void setPrId(String prId) {
+        this.prId = prId;
+    }
+
+    public String getPrTargetBranch() {
+        return prTargetBranch;
+    }
+
+    @DataBoundSetter
+    public void setPrTargetBranch(String prTargetBranch) {
+        this.prTargetBranch = prTargetBranch;
+    }
+
+    public String getDefaultCollectionName() {
+        return defaultCollectionName;
+    }
+
+    @DataBoundSetter
+    public void setDefaultCollectionName(String defaultCollectionName) {
+        this.defaultCollectionName = defaultCollectionName;
+    }
+
+    public String getRootDirectory() {
+        return rootDirectory;
+    }
+
+    @DataBoundSetter
+    public void setRootDirectory(String rootDirectory) {
+        this.rootDirectory = rootDirectory;
+    }
+
     public String getShareEveryone() {
         if (shareEveryone == null) {
             return "OFF";
@@ -130,29 +180,16 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.shareEveryone = shareEveryone;
     }
 
-    private String actualBranchName(Run<?, ?> build, TaskListener listener, Logger logger)
+    private String expandVariable(String name, String value, Run<?, ?> build, TaskListener listener, Logger logger)
             throws IOException, InterruptedException {
-        if (build instanceof AbstractBuild) {
+        if (build instanceof AbstractBuild && value != null && !value.equals("")) {
             EnvVars env = build.getEnvironment(listener);
             env.overrideAll(((AbstractBuild) build).getBuildVariables());
-            String expanded = env.expand(branchName);
-            logger.debug(String.format("Expanded branchName parameter '%s' to '%s'", branchName, expanded));
+            String expanded = env.expand(value);
+            logger.debug(String.format("Expanded %s parameter '%s' to '%s'", name, value, expanded));
             return expanded;
         } else {
-            return branchName;
-        }
-    }
-
-    private String actualRepositoryName(Run<?, ?> build, TaskListener listener, Logger logger)
-            throws IOException, InterruptedException {
-        if (build instanceof AbstractBuild) {
-            EnvVars env = build.getEnvironment(listener);
-            env.overrideAll(((AbstractBuild) build).getBuildVariables());
-            String expanded = env.expand(repositoryName);
-            logger.debug(String.format("Expanded repositoryName parameter '%s' to '%s'", repositoryName, expanded));
-            return expanded;
-        } else {
-            return repositoryName;
+            return value;
         }
     }
 
@@ -188,22 +225,24 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             }
         }
 
-        String actualRepositoryName = actualRepositoryName(run, listener, logger);
+        String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
         if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
             throw new AbortException(String.format("Parameter repositoryName must be set"));
         }
 
-        String actualBranchName = actualBranchName(run, listener, logger);
-        if (actualBranchName == null || actualBranchName.length() == 0) {
-            throw new AbortException(String.format("Parameter branchName must be set"));
-        }
+        String actualBranchName = expandVariable("branchName", branchName, run, listener, logger);
+        String actualTagName = expandVariable("tagName", tagName, run, listener, logger);
+        String actualPrId = expandVariable("prId", prId, run, listener, logger);
+        String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
 
         ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
 
         launcher.getChannel()
                 .call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
+                        getDefaultCollectionName(), getRootDirectory(),
                         getShareEveryone(),
-                        minScore, proxyConfiguration, actualRepositoryName, actualBranchName));
+                        minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName, actualPrId,
+                        actualPrTargetBranch));
     }
 
     @Symbol("audit")

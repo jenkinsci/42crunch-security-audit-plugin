@@ -7,10 +7,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
-import com.xliic.cicd.audit.AuditException;
+import com.xliic.cicd.common.TaskException;
 import com.xliic.cicd.audit.AuditResults;
 import com.xliic.cicd.audit.Auditor;
-import com.xliic.cicd.audit.Logger;
+import com.xliic.cicd.common.Logger;
+import com.xliic.cicd.common.Reference;
 import com.xliic.cicd.audit.Secret;
 import com.xliic.cicd.audit.SharingType;
 import com.xliic.common.Workspace;
@@ -32,10 +33,16 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private ProxyConfiguration proxyConfiguration;
     private String actualRepositoryName;
     private String actualBranchName;
+    private String actualTagName;
+    private String actualPrId;
+    private String actualPrTargetBranch;
+    private String defaultCollectionName;
+    private String rootDirectory;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
+            String defaultCollectionName, String rootDirectory,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
-            String actualBranchName) {
+            String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
         this.listener = listener;
         this.workspace = workspace;
         this.logLevel = logLevel;
@@ -46,9 +53,17 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.proxyConfiguration = proxyConfiguration;
         this.actualRepositoryName = actualRepositoryName;
         this.actualBranchName = actualBranchName;
+        this.actualTagName = actualTagName;
+        this.actualPrId = actualPrId;
+        this.actualPrTargetBranch = actualPrTargetBranch;
+        this.defaultCollectionName = defaultCollectionName;
+        this.rootDirectory = rootDirectory;
     }
 
     public Void call() throws AbortException {
+        if (rootDirectory != null && !rootDirectory.equals("")) {
+            workspace = new FilePath(workspace, rootDirectory);
+        }
         final WorkspaceImpl auditWorkspace = new WorkspaceImpl(workspace);
         final Finder finder = new Finder(workspace);
         final LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
@@ -56,6 +71,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
 
         auditor.setMinScore(minScore);
+        auditor.setDefaultCollectionName(defaultCollectionName);
 
         if (shareEveryone.equals("READ_ONLY")) {
             auditor.setShareEveryone(SharingType.READ_ONLY);
@@ -67,8 +83,14 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             auditor.setProxy(proxyConfiguration.name, proxyConfiguration.port);
         }
 
+        final Reference reference = getReference(actualBranchName, actualTagName, actualPrId, actualPrTargetBranch);
+
+        if (reference == null) {
+            throw new AbortException("Unable to retrieve branch/tag name or PR id");
+        }
+
         try {
-            AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, actualBranchName);
+            AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, reference);
             displayReport(results, logger, auditWorkspace);
             if (results.failures > 0) {
                 throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
@@ -76,7 +98,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             } else if (results.summary.size() == 0) {
                 throw new AbortException("No OpenAPI files found.");
             }
-        } catch (AuditException ex) {
+        } catch (TaskException ex) {
             throw new AbortException(ex.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,6 +106,22 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         } catch (InterruptedException e) {
             e.printStackTrace();
             throw new AbortException(e.getMessage());
+        }
+
+        return null;
+    }
+
+    private Reference getReference(String branch, String tag, String prId, String prTargetBranch) {
+        if (branch != null) {
+            return Reference.branch(branch);
+        }
+
+        if (tag != null) {
+            return Reference.tag(tag);
+        }
+
+        if (prId != null && prTargetBranch != null) {
+            return Reference.pr(prId, prTargetBranch);
         }
 
         return null;
