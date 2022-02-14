@@ -36,6 +36,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Item;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.remoting.VirtualChannel;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
@@ -237,12 +238,17 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
 
         ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
 
-        launcher.getChannel()
-                .call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
-                        getDefaultCollectionName(), getRootDirectory(),
-                        getShareEveryone(),
-                        minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName, actualPrId,
-                        actualPrTargetBranch));
+        VirtualChannel channel = launcher.getChannel();
+        if (channel != null) {
+            channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
+                    getDefaultCollectionName(), getRootDirectory(),
+                    getShareEveryone(),
+                    minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
+                    actualPrId,
+                    actualPrTargetBranch));
+        } else {
+            throw new AbortException("Unable to get channel to launch AuditTask");
+        }
     }
 
     @Symbol("audit")
