@@ -6,15 +6,20 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import com.xliic.cicd.common.Util;
 
 import com.xliic.cicd.common.TaskException;
+import com.xliic.cicd.common.WritableWorkspace;
 import com.xliic.cicd.audit.AuditResults;
 import com.xliic.cicd.audit.Auditor;
 import com.xliic.cicd.common.Logger;
 import com.xliic.cicd.common.Reference;
 import com.xliic.cicd.audit.Secret;
 import com.xliic.cicd.audit.SharingType;
+import com.xliic.common.ContentType;
 import com.xliic.common.Workspace;
+import com.xliic.common.WorkspaceContent;
+import com.xliic.common.WorkspaceException;
 
 import hudson.model.TaskListener;
 import hudson.AbortException;
@@ -37,10 +42,11 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private String actualPrId;
     private String actualPrTargetBranch;
     private String defaultCollectionName;
+    private String jsonReport;
     private String rootDirectory;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
-            String defaultCollectionName, String rootDirectory,
+            String defaultCollectionName, String rootDirectory, String jsonReport,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
             String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
         this.listener = listener;
@@ -58,6 +64,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.actualPrTargetBranch = actualPrTargetBranch;
         this.defaultCollectionName = defaultCollectionName;
         this.rootDirectory = rootDirectory;
+        this.jsonReport = jsonReport;
     }
 
     public Void call() throws AbortException {
@@ -69,7 +76,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         final LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
 
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
-
+        auditor.setWriteJsonReportTo(jsonReport);
         auditor.setMinScore(minScore);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
@@ -108,6 +115,12 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             e.printStackTrace();
             throw new AbortException(e.getMessage());
         } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw new AbortException(e.getMessage());
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw new AbortException(e.getMessage());
+        } catch (WorkspaceException e) {
             e.printStackTrace();
             throw new AbortException(e.getMessage());
         }
@@ -150,7 +163,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         });
     }
 
-    static class WorkspaceImpl implements Workspace {
+    static class WorkspaceImpl implements WritableWorkspace {
 
         private FilePath workspace;
 
@@ -159,7 +172,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         }
 
         @Override
-        public String read(URI uri) throws IOException, InterruptedException {
+        public WorkspaceContent read(URI uri) throws IOException, InterruptedException {
 
             FilePath filepath = new FilePath(workspace, uri.getPath());
 
@@ -171,8 +184,19 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
                 buffer.write(data, 0, read);
             }
             buffer.flush();
+            String contentData = new String(buffer.toByteArray(), StandardCharsets.UTF_8);
 
-            return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+            boolean isYaml = Util.isYaml(uri.getPath());
+            return new WorkspaceContent(contentData, isYaml ? ContentType.YAML : ContentType.JSON);
+
+        }
+
+        @Override
+        public void write(URI uri, WorkspaceContent content)
+                throws IOException, InterruptedException, WorkspaceException {
+
+            FilePath filepath = new FilePath(workspace, uri.getPath());
+            filepath.write(content.data, StandardCharsets.UTF_8.name());
 
         }
 

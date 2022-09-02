@@ -58,6 +58,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String prTargetBranch = "";
     private String defaultCollectionName = "";
     private String rootDirectory = "";
+    private String jsonReport;
+
     private String shareEveryone;
 
     @DataBoundConstructor
@@ -169,6 +171,15 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.rootDirectory = rootDirectory;
     }
 
+    public String getJsonReport() {
+        return jsonReport;
+    }
+
+    @DataBoundSetter
+    public void setJsonReport(String jsonReport) {
+        this.jsonReport = jsonReport;
+    }
+
     public String getShareEveryone() {
         if (shareEveryone == null) {
             return "OFF";
@@ -241,7 +252,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         VirtualChannel channel = launcher.getChannel();
         if (channel != null) {
             channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
-                    getDefaultCollectionName(), getRootDirectory(),
+                    getDefaultCollectionName(), getRootDirectory(), getJsonReport(),
                     getShareEveryone(),
                     minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
                     actualPrId,
