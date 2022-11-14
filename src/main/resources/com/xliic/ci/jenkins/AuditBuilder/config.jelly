@@ -54,6 +54,10 @@
                 <f:textbox default="" />
             </f:entry>
 
+            <f:entry title="Set tags for newly created APIs" field="api_tags">
+                <f:textbox default="" />
+            </f:entry>
+
             <h4>Sharing of new API collections</h4>
             <f:entry name="shareEveryone" title="Share with everyone" field="shareEveryone">
                 <select name="shareEveryone">

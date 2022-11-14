@@ -43,10 +43,11 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private String actualPrTargetBranch;
     private String defaultCollectionName;
     private String jsonReport;
+    private String api_tags;
     private String rootDirectory;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
-            String defaultCollectionName, String rootDirectory, String jsonReport,
+            String defaultCollectionName, String rootDirectory, String jsonReport, String api_tags,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
             String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
         this.listener = listener;
@@ -65,6 +66,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.defaultCollectionName = defaultCollectionName;
         this.rootDirectory = rootDirectory;
         this.jsonReport = jsonReport;
+        this.api_tags = api_tags;
     }
 
     public Void call() throws AbortException {
@@ -77,6 +79,11 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
 
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
         auditor.setWriteJsonReportTo(jsonReport);
+        try {
+            auditor.setApiTags(api_tags);
+        } catch (TaskException ex) {
+            throw new AbortException(ex.getMessage());
+        }
         auditor.setMinScore(minScore);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
