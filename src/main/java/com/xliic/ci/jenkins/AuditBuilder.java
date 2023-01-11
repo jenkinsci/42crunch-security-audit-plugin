@@ -60,6 +60,9 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String rootDirectory = "";
     private String jsonReport;
     private String api_tags;
+    private boolean skipLocalChecks = false;
+    private boolean forceIgnoreNetworkFailures = false;
+    private boolean forceIgnoreAllFailures = false;
 
     private String shareEveryone;
 
@@ -102,6 +105,33 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return "INFO";
         }
         return logLevel;
+    }
+
+    @DataBoundSetter
+    public void setSkipLocalChecks(boolean skipLocalChecks) {
+        this.skipLocalChecks = skipLocalChecks;
+    }
+
+    public boolean getSkipLocalChecks() {
+        return this.skipLocalChecks;
+    }
+
+    @DataBoundSetter
+    public void setForceIgnoreNetworkFailures(boolean forceIgnoreNetworkFailures) {
+        this.forceIgnoreNetworkFailures = forceIgnoreNetworkFailures;
+    }
+
+    public boolean getForceIgnoreNetworkFailures() {
+        return this.forceIgnoreNetworkFailures;
+    }
+
+    @DataBoundSetter
+    public void setForceIgnoreAllFailures(boolean forceIgnoreAllFailures) {
+        this.forceIgnoreAllFailures = forceIgnoreAllFailures;
+    }
+
+    public boolean getForceIgnoreAllFailures() {
+        return this.forceIgnoreAllFailures;
     }
 
     @DataBoundSetter
@@ -216,59 +246,70 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "REC_CATCH_EXCEPTION", justification = "need for flag forceIgnoreAllFaulires")
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
-        LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
+        try {
+            LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
 
-        ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
-                Collections.<DomainRequirement>emptyList());
+            ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
+                    Collections.<DomainRequirement>emptyList());
 
-        if (credential == null) {
-            throw new AbortException("Unable to load API Token credential: " + credentialsId);
-        }
-
-        Secret apiKey = new SecretImpl(credential.getApiKey());
-
-        if (!apiKey.getPlainText().matches(ApiKey.UUID_PATTERN)) {
-            throw new AbortException("Invalid format of API Token");
-        }
-
-        String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
-        if (trimmedUrl != null) {
-            try {
-                URI url = new URI(trimmedUrl);
-                if (url.getScheme() == null || !url.getScheme().equals("https")) {
-                    throw new AbortException(
-                            String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
-                }
-                this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
-            } catch (URISyntaxException e) {
-                throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+            if (credential == null) {
+                throw new AbortException("Unable to load API Token credential: " + credentialsId);
             }
-        }
 
-        String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
-        if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
-            throw new AbortException(String.format("Parameter repositoryName must be set"));
-        }
+            Secret apiKey = new SecretImpl(credential.getApiKey());
 
-        String actualBranchName = expandVariable("branchName", branchName, run, listener, logger);
-        String actualTagName = expandVariable("tagName", tagName, run, listener, logger);
-        String actualPrId = expandVariable("prId", prId, run, listener, logger);
-        String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
+            if (!apiKey.getPlainText().matches(ApiKey.UUID_PATTERN)) {
+                throw new AbortException("Invalid format of API Token");
+            }
 
-        ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
+            String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
+            if (trimmedUrl != null) {
+                try {
+                    URI url = new URI(trimmedUrl);
+                    if (url.getScheme() == null || !url.getScheme().equals("https")) {
+                        throw new AbortException(
+                                String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
+                    }
+                    this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
+                } catch (URISyntaxException e) {
+                    throw new AbortException(
+                            String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+                }
+            }
 
-        VirtualChannel channel = launcher.getChannel();
-        if (channel != null) {
-            channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
-                    getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
-                    getShareEveryone(),
-                    minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
-                    actualPrId,
-                    actualPrTargetBranch));
-        } else {
-            throw new AbortException("Unable to get channel to launch AuditTask");
+            String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
+            if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
+                throw new AbortException(String.format("Parameter repositoryName must be set"));
+            }
+
+            String actualBranchName = expandVariable("branchName", branchName, run, listener, logger);
+            String actualTagName = expandVariable("tagName", tagName, run, listener, logger);
+            String actualPrId = expandVariable("prId", prId, run, listener, logger);
+            String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
+
+            ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
+
+            VirtualChannel channel = launcher.getChannel();
+            if (channel != null) {
+                channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
+                        getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
+                        getSkipLocalChecks(),
+                        getForceIgnoreNetworkFailures(), getShareEveryone(),
+                        minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
+                        actualPrId,
+                        actualPrTargetBranch));
+            } else {
+                throw new AbortException("Unable to get channel to launch AuditTask");
+            }
+        } catch (Exception e) {
+            if (forceIgnoreAllFailures) {
+                listener.getLogger().println(e.getMessage());
+            } else {
+                throw e;
+            }
         }
     }
 

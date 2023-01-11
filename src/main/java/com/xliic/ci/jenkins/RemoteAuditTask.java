@@ -45,9 +45,12 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private String jsonReport;
     private String api_tags;
     private String rootDirectory;
+    private boolean skipLocalChecks;
+    private boolean forceIgnoreNetworkFailures;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
             String defaultCollectionName, String rootDirectory, String jsonReport, String api_tags,
+            boolean skipLocalChecks, boolean forceIgnoreNetworkFailures,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
             String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
         this.listener = listener;
@@ -67,6 +70,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.rootDirectory = rootDirectory;
         this.jsonReport = jsonReport;
         this.api_tags = api_tags;
+        this.skipLocalChecks = skipLocalChecks;
     }
 
     public Void call() throws AbortException {
@@ -84,6 +88,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         } catch (TaskException ex) {
             throw new AbortException(ex.getMessage());
         }
+        auditor.setSkipLocalChecks(skipLocalChecks);
         auditor.setMinScore(minScore);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
@@ -117,7 +122,11 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
                 throw new AbortException("No OpenAPI files found.");
             }
         } catch (TaskException ex) {
-            throw new AbortException(ex.getMessage());
+            if (forceIgnoreNetworkFailures && ex.isNetworkFailure()) {
+                logger.error(actualBranchName);
+            } else {
+                throw new AbortException(ex.getMessage());
+            }
         } catch (IOException e) {
             e.printStackTrace();
             throw new AbortException(e.getMessage());
