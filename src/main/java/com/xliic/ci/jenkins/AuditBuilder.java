@@ -246,7 +246,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "REC_CATCH_EXCEPTION", justification = "need for flag forceIgnoreAllFaulires")
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
         LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
