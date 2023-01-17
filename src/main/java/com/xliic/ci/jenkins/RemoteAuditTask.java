@@ -134,7 +134,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             }
         } catch (TaskException ex) {
             if (ignoreNetworkErrors && ex.isNetworkError()) {
-                logger.error(actualBranchName);
+                logger.error(ex.getMessage());
             } else {
                 ex.printStackTrace();
                 throw new AbortException(ex.getMessage());
