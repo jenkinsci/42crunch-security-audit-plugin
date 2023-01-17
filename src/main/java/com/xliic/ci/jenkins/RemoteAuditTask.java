@@ -46,11 +46,12 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private String api_tags;
     private String rootDirectory;
     private boolean skipLocalChecks;
-    private boolean forceIgnoreNetworkFailures;
+    private boolean ignoreNetworkErrors;
+    private boolean ignoreFailures;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
             String defaultCollectionName, String rootDirectory, String jsonReport, String api_tags,
-            boolean skipLocalChecks, boolean forceIgnoreNetworkFailures,
+            boolean skipLocalChecks, boolean ignoreNetworkErrors, boolean ignoreFailures,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
             String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
         this.listener = listener;
@@ -71,6 +72,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.jsonReport = jsonReport;
         this.api_tags = api_tags;
         this.skipLocalChecks = skipLocalChecks;
+        this.ignoreFailures = ignoreFailures;
+        this.ignoreNetworkErrors = ignoreNetworkErrors;
     }
 
     public Void call() throws AbortException {
@@ -110,21 +113,30 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         if (reference == null) {
             throw new AbortException("Unable to retrieve branch/tag name or PR id");
         }
+        if (ignoreFailures) {
+            logger.info("Ignoring security audit failures");
+        }
+        if (ignoreNetworkErrors) {
+            logger.info("Ignoring network errors");
+        }
 
         try {
             AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, reference);
             displayReport(results, logger, auditWorkspace);
             listener.getLogger().flush();
-            if (results.failures > 0) {
-                throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
-                        results.failures, results.summary.size()));
-            } else if (results.summary.size() == 0) {
-                throw new AbortException("No OpenAPI files found.");
+            if (!ignoreFailures) {
+                if (results.failures > 0) {
+                    throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
+                            results.failures, results.summary.size()));
+                } else if (results.summary.size() == 0) {
+                    throw new AbortException("No OpenAPI files found.");
+                }
             }
         } catch (TaskException ex) {
-            if (forceIgnoreNetworkFailures && ex.isNetworkFailure()) {
+            if (ignoreNetworkErrors && ex.isNetworkError()) {
                 logger.error(actualBranchName);
             } else {
+                ex.printStackTrace();
                 throw new AbortException(ex.getMessage());
             }
         } catch (IOException e) {

@@ -71,10 +71,10 @@
             <f:entry title="Skip local Checks" field="skipLocalChecks">
                 <f:checkbox/>
             </f:entry>
-            <f:entry title="Force ignore network failures" field="forceIgnoreNetworkFailures">
+            <f:entry title="Ignore network errors" field="ignoreNetworkErrors">
                 <f:checkbox/>
             </f:entry>
-            <f:entry title="Force ignore all failures" field="forceIgnoreAllFailures">
+            <f:entry title="Ignore audit failures" field="ignoreFailures">
                 <f:checkbox/>
             </f:entry>
 

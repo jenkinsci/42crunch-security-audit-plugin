@@ -61,8 +61,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String jsonReport;
     private String api_tags;
     private boolean skipLocalChecks = false;
-    private boolean forceIgnoreNetworkFailures = false;
-    private boolean forceIgnoreAllFailures = false;
+    private boolean ignoreNetworkErrors = false;
+    private boolean ignoreFailures = false;
 
     private String shareEveryone;
 
@@ -117,21 +117,21 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     }
 
     @DataBoundSetter
-    public void setForceIgnoreNetworkFailures(boolean forceIgnoreNetworkFailures) {
-        this.forceIgnoreNetworkFailures = forceIgnoreNetworkFailures;
+    public void setIgnoreNetworkErrors(boolean ignoreNetworkErrors) {
+        this.ignoreNetworkErrors = ignoreNetworkErrors;
     }
 
-    public boolean getForceIgnoreNetworkFailures() {
-        return this.forceIgnoreNetworkFailures;
+    public boolean getIgnoreNetworkErrors() {
+        return this.ignoreNetworkErrors;
     }
 
     @DataBoundSetter
-    public void setForceIgnoreAllFailures(boolean forceIgnoreAllFailures) {
-        this.forceIgnoreAllFailures = forceIgnoreAllFailures;
+    public void setIgnoreFailures(boolean ignoreFailures) {
+        this.ignoreFailures = ignoreFailures;
     }
 
-    public boolean getForceIgnoreAllFailures() {
-        return this.forceIgnoreAllFailures;
+    public boolean getIgnoreFailures() {
+        return this.ignoreFailures;
     }
 
     @DataBoundSetter
@@ -249,67 +249,59 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "REC_CATCH_EXCEPTION", justification = "need for flag forceIgnoreAllFaulires")
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
-        try {
-            LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
+        LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
 
-            ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
-                    Collections.<DomainRequirement>emptyList());
+        ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
+                Collections.<DomainRequirement>emptyList());
 
-            if (credential == null) {
-                throw new AbortException("Unable to load API Token credential: " + credentialsId);
-            }
+        if (credential == null) {
+            throw new AbortException("Unable to load API Token credential: " + credentialsId);
+        }
 
-            Secret apiKey = new SecretImpl(credential.getApiKey());
+        Secret apiKey = new SecretImpl(credential.getApiKey());
 
-            if (!apiKey.getPlainText().matches(ApiKey.UUID_PATTERN)) {
-                throw new AbortException("Invalid format of API Token");
-            }
+        if (!apiKey.getPlainText().matches(ApiKey.UUID_PATTERN)) {
+            throw new AbortException("Invalid format of API Token");
+        }
 
-            String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
-            if (trimmedUrl != null) {
-                try {
-                    URI url = new URI(trimmedUrl);
-                    if (url.getScheme() == null || !url.getScheme().equals("https")) {
-                        throw new AbortException(
-                                String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
-                    }
-                    this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
-                } catch (URISyntaxException e) {
+        String trimmedUrl = Util.fixEmptyAndTrim(platformUrl);
+        if (trimmedUrl != null) {
+            try {
+                URI url = new URI(trimmedUrl);
+                if (url.getScheme() == null || !url.getScheme().equals("https")) {
                     throw new AbortException(
-                            String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+                            String.format("Bad platform URL '%s': only https:// URLs are allowed", url));
                 }
+                this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
+            } catch (URISyntaxException e) {
+                throw new AbortException(
+                        String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
+        }
 
-            String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
-            if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
-                throw new AbortException(String.format("Parameter repositoryName must be set"));
-            }
+        String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
+        if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
+            throw new AbortException(String.format("Parameter repositoryName must be set"));
+        }
 
-            String actualBranchName = expandVariable("branchName", branchName, run, listener, logger);
-            String actualTagName = expandVariable("tagName", tagName, run, listener, logger);
-            String actualPrId = expandVariable("prId", prId, run, listener, logger);
-            String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
+        String actualBranchName = expandVariable("branchName", branchName, run, listener, logger);
+        String actualTagName = expandVariable("tagName", tagName, run, listener, logger);
+        String actualPrId = expandVariable("prId", prId, run, listener, logger);
+        String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
 
-            ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
+        ProxyConfiguration proxyConfiguration = Jenkins.get().proxy;
 
-            VirtualChannel channel = launcher.getChannel();
-            if (channel != null) {
-                channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
-                        getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
-                        getSkipLocalChecks(),
-                        getForceIgnoreNetworkFailures(), getShareEveryone(),
-                        minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
-                        actualPrId,
-                        actualPrTargetBranch));
-            } else {
-                throw new AbortException("Unable to get channel to launch AuditTask");
-            }
-        } catch (Exception e) {
-            if (forceIgnoreAllFailures) {
-                listener.getLogger().println(e.getMessage());
-            } else {
-                throw e;
-            }
+        VirtualChannel channel = launcher.getChannel();
+        if (channel != null) {
+            channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
+                    getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
+                    getSkipLocalChecks(),
+                    getIgnoreNetworkErrors(), getIgnoreFailures(), getShareEveryone(),
+                    minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
+                    actualPrId,
+                    actualPrTargetBranch));
+        } else {
+            throw new AbortException("Unable to get channel to launch AuditTask");
         }
     }
 
