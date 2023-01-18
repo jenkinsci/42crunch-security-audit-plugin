@@ -60,6 +60,9 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String rootDirectory = "";
     private String jsonReport;
     private String api_tags;
+    private boolean skipLocalChecks = false;
+    private boolean ignoreNetworkErrors = false;
+    private boolean ignoreFailures = false;
 
     private String shareEveryone;
 
@@ -102,6 +105,33 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return "INFO";
         }
         return logLevel;
+    }
+
+    @DataBoundSetter
+    public void setSkipLocalChecks(boolean skipLocalChecks) {
+        this.skipLocalChecks = skipLocalChecks;
+    }
+
+    public boolean getSkipLocalChecks() {
+        return this.skipLocalChecks;
+    }
+
+    @DataBoundSetter
+    public void setIgnoreNetworkErrors(boolean ignoreNetworkErrors) {
+        this.ignoreNetworkErrors = ignoreNetworkErrors;
+    }
+
+    public boolean getIgnoreNetworkErrors() {
+        return this.ignoreNetworkErrors;
+    }
+
+    @DataBoundSetter
+    public void setIgnoreFailures(boolean ignoreFailures) {
+        this.ignoreFailures = ignoreFailures;
+    }
+
+    public boolean getIgnoreFailures() {
+        return this.ignoreFailures;
     }
 
     @DataBoundSetter
@@ -243,7 +273,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 }
                 this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
             } catch (URISyntaxException e) {
-                throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+                throw new AbortException(
+                        String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
         }
 
@@ -263,7 +294,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         if (channel != null) {
             channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
                     getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
-                    getShareEveryone(),
+                    getSkipLocalChecks(),
+                    getIgnoreNetworkErrors(), getIgnoreFailures(), getShareEveryone(),
                     minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
                     actualPrId,
                     actualPrTargetBranch));
