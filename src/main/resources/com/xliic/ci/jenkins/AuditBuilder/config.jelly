@@ -54,7 +54,7 @@
                 <f:textbox default="" />
             </f:entry>
 
-            <f:entry title="Set tags for newly created APIs" field="api_tags">
+            <f:entry title="Set tags for newly created APIs" field="apiTags">
                 <f:textbox default="" />
             </f:entry>
 

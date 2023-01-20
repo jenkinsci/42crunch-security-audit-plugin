@@ -59,7 +59,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String defaultCollectionName = "";
     private String rootDirectory = "";
     private String jsonReport;
-    private String api_tags;
+    private String apiTags;
     private boolean skipLocalChecks = false;
     private boolean ignoreNetworkErrors = false;
     private boolean ignoreFailures = false;
@@ -212,12 +212,12 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     }
 
     public String getApiTags() {
-        return api_tags;
+        return apiTags;
     }
 
     @DataBoundSetter
-    public void setApiTags(String api_tags) {
-        this.api_tags = api_tags;
+    public void setApiTags(String apiTags) {
+        this.apiTags = apiTags;
     }
 
     public String getShareEveryone() {
