@@ -43,14 +43,14 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private String actualPrTargetBranch;
     private String defaultCollectionName;
     private String jsonReport;
-    private String api_tags;
+    private String apiTags;
     private String rootDirectory;
     private boolean skipLocalChecks;
     private boolean ignoreNetworkErrors;
     private boolean ignoreFailures;
 
     RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
-            String defaultCollectionName, String rootDirectory, String jsonReport, String api_tags,
+            String defaultCollectionName, String rootDirectory, String jsonReport, String apiTags,
             boolean skipLocalChecks, boolean ignoreNetworkErrors, boolean ignoreFailures,
             String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
             String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
@@ -70,7 +70,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.defaultCollectionName = defaultCollectionName;
         this.rootDirectory = rootDirectory;
         this.jsonReport = jsonReport;
-        this.api_tags = api_tags;
+        this.apiTags = apiTags;
         this.skipLocalChecks = skipLocalChecks;
         this.ignoreFailures = ignoreFailures;
         this.ignoreNetworkErrors = ignoreNetworkErrors;
@@ -87,7 +87,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         Auditor auditor = new Auditor(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
         auditor.setWriteJsonReportTo(jsonReport);
         try {
-            auditor.setApiTags(api_tags);
+            auditor.setApiTags(apiTags);
         } catch (TaskException ex) {
             throw new AbortException(ex.getMessage());
         }
