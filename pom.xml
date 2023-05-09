@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.50</version>
+        <version>4.62</version>
         <relativePath />
     </parent>
     <groupId>io.jenkins.plugins</groupId>
@@ -12,12 +12,7 @@
     <version>5.4-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
-        <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or
-        newer to run. -->
-        <jenkins.version>2.164.3</jenkins.version>
-        <java.level>8</java.level>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+         <jenkins.version>2.361.4</jenkins.version>
     </properties>
     <name>42Crunch REST API Static Security Testing</name>
     <licenses>
@@ -29,12 +24,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <!-- Pick up common dependencies for 2.164.x: https://github.com/jenkinsci/bom#usage -->
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.164.x</artifactId>
-                <version>3</version>
-                <scope>import</scope>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>2062.v154408a_24d20</version>
                 <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -42,7 +36,7 @@
         <dependency>
             <groupId>com.xliic</groupId>
             <artifactId>cicd-core</artifactId>
-            <version>5.28</version>
+            <version>5.29</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
