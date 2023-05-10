@@ -10,6 +10,8 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -349,6 +351,16 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             }
 
             return FormValidation.ok();
+        }
+
+        public FormValidation doCheckApiTags(@QueryParameter String input) {
+            String pattern = "^[\\w]+:[\\w]+( [\\w]+:[\\w]+)*$";
+            Pattern regex = Pattern.compile(pattern);
+            Matcher matcher = regex.matcher(input);
+            if (matcher.matches()) {
+                return FormValidation.ok();
+            }
+            return FormValidation.error("Please use the pattern 'category:tag category:tag ...");
         }
     }
 
