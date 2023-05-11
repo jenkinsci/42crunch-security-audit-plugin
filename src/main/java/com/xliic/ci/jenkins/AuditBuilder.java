@@ -353,14 +353,17 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckApiTags(@QueryParameter String input) {
-            String pattern = "^[\\w]+:[\\w]+( [\\w]+:[\\w]+)*$";
-            Pattern regex = Pattern.compile(pattern);
-            Matcher matcher = regex.matcher(input);
-            if (matcher.matches()) {
-                return FormValidation.ok();
+        public FormValidation doCheckApiTags(@QueryParameter String value) {
+            String trimmedInput = Util.fixEmptyAndTrim(value);
+            if (trimmedInput != null) {
+                String pattern = "^[\\w]+:[\\w]+( [\\w]+:[\\w]+)*$";
+                Pattern regex = Pattern.compile(pattern);
+                Matcher matcher = regex.matcher(trimmedInput);
+                if (!matcher.matches()) {
+                    return FormValidation.error("Please use the pattern 'category:tag category2:tag2...'");
+                }
             }
-            return FormValidation.error("Please use the pattern 'category:tag category:tag ...");
+            return FormValidation.ok();
         }
     }
 
