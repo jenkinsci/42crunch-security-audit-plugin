@@ -124,7 +124,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             AuditResults results = auditor.audit(auditWorkspace, actualRepositoryName, reference);
             displayReport(results, logger, auditWorkspace);
             listener.getLogger().flush();
-            if (!ignoreFailures) {
+            if (!ignoreFailures && !results.ignoreFailures) {
                 if (results.failures > 0) {
                     throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
                             results.failures, results.summary.size()));
