@@ -51,7 +51,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
 
     private int minScore = 75;
     private String credentialsId;
-    private String platformUrl = "https://platform.42crunch.com";
+    private String platformUrl = "https://us.42crunch.cloud";
     private String logLevel;
     private String repositoryName = "${GIT_URL}";
     private String branchName = "";

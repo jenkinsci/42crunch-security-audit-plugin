@@ -9,7 +9,7 @@
     <f:section>
         <f:advanced>
             <f:entry title="Platform URL" field="platformUrl">
-                <f:textbox default="https://platform.42crunch.com" />
+                <f:textbox default="https://us.42crunch.cloud" />
             </f:entry>
             
             <f:entry name="logLevel" title="Log level" field="logLevel">

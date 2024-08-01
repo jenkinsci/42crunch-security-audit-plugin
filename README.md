@@ -8,8 +8,6 @@ As a result of the security testing, your APIs get an audit score, with 100 poin
 
 API contracts must follow the OpenAPI Specification (OAS) (formely Swagger). Both OAS v2 and v3, and both JSON and YAML formats are supported.
 
-You can create a free 42Crunch account at https://platform.42crunch.com/register, and then configure the plugin.
-
 ## Quick start
 
 1. Install the plugin.
@@ -42,6 +40,7 @@ For more details, see the [documentation](https://docs.42crunch.com/latest/conte
 The plugin is maintained by support@42crunch.com. If you run into an issue, or have a question not answered here, you can create a support ticket at [support.42crunch.com](https://support.42crunch.com/).
 
 If you're reporting an issue, do include:
+
 - The version of the Jenkins plugin
 - Relevant logs and error messages
 - Steps to reproduce the issue
