@@ -5,27 +5,12 @@
 
 package com.xliic.ci.jenkins;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
-import com.xliic.cicd.common.Logger;
 import com.xliic.cicd.audit.Secret;
-
-import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-
+import com.xliic.cicd.common.Logger;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -44,8 +29,20 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
+import org.jenkinsci.Symbol;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
 
 public class AuditBuilder extends Builder implements SimpleBuildStep {
 
@@ -252,8 +249,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             throws InterruptedException, IOException {
         LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
 
-        ApiKey credential = CredentialsProvider.findCredentialById(credentialsId, ApiKey.class, run,
-                Collections.<DomainRequirement>emptyList());
+        ApiKey credential = CredentialsProvider.findCredentialById(
+                credentialsId, ApiKey.class, run, Collections.<DomainRequirement>emptyList());
 
         if (credential == null) {
             throw new AbortException("Unable to load API Token credential: " + credentialsId);
@@ -275,8 +272,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 }
                 this.platformUrl = String.format("%s://%s", url.getScheme(), url.getRawAuthority());
             } catch (URISyntaxException e) {
-                throw new AbortException(
-                        String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
+                throw new AbortException(String.format("Malformed platform URL '%s': %s", trimmedUrl, e.getMessage()));
             }
         }
 
@@ -294,11 +290,25 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
 
         VirtualChannel channel = launcher.getChannel();
         if (channel != null) {
-            channel.call(new RemoteAuditTask(workspace, listener, apiKey, getPlatformUrl(), getLogLevel(),
-                    getDefaultCollectionName(), getRootDirectory(), getJsonReport(), getApiTags(),
+            channel.call(new RemoteAuditTask(
+                    workspace,
+                    listener,
+                    apiKey,
+                    getPlatformUrl(),
+                    getLogLevel(),
+                    getDefaultCollectionName(),
+                    getRootDirectory(),
+                    getJsonReport(),
+                    getApiTags(),
                     getSkipLocalChecks(),
-                    getIgnoreNetworkErrors(), getIgnoreFailures(), getShareEveryone(),
-                    minScore, proxyConfiguration, actualRepositoryName, actualBranchName, actualTagName,
+                    getIgnoreNetworkErrors(),
+                    getIgnoreFailures(),
+                    getShareEveryone(),
+                    minScore,
+                    proxyConfiguration,
+                    actualRepositoryName,
+                    actualBranchName,
+                    actualTagName,
                     actualPrId,
                     actualPrTargetBranch));
         } else {
@@ -319,8 +329,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             return true;
         }
 
-        public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item ancestor,
-                @QueryParameter String credentialsId) {
+        public ListBoxModel doFillCredentialsIdItems(
+                @AncestorInPath Item ancestor, @QueryParameter String credentialsId) {
 
             StandardListBoxModel result = new StandardListBoxModel();
 
@@ -335,8 +345,12 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 }
             }
 
-            return result.includeMatchingAs(ACL.SYSTEM, ancestor, ApiKey.class,
-                    Collections.<DomainRequirement>emptyList(), CredentialsMatchers.always())
+            return result.includeMatchingAs(
+                            ACL.SYSTEM,
+                            ancestor,
+                            ApiKey.class,
+                            Collections.<DomainRequirement>emptyList(),
+                            CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
         }
 
