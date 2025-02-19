@@ -5,21 +5,17 @@
 
 package com.xliic.ci.jenkins;
 
-import java.io.IOException;
-
-import javax.annotation.Nonnull;
-import javax.annotation.CheckForNull;
-
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import hudson.Extension;
 import hudson.Util;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
+import java.io.IOException;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 public class ApiKeyImpl extends BaseStandardCredentials implements ApiKey {
     static final long serialVersionUID = 42L;
@@ -28,8 +24,12 @@ public class ApiKeyImpl extends BaseStandardCredentials implements ApiKey {
     private final Secret apiKey;
 
     @DataBoundConstructor
-    public ApiKeyImpl(@CheckForNull CredentialsScope scope, @CheckForNull String id, @Nonnull Secret apiKey,
-            @CheckForNull String description) throws IOException {
+    public ApiKeyImpl(
+            @CheckForNull CredentialsScope scope,
+            @CheckForNull String id,
+            @Nonnull Secret apiKey,
+            @CheckForNull String description)
+            throws IOException {
         super(scope, id, description);
         this.apiKey = apiKey;
     }
