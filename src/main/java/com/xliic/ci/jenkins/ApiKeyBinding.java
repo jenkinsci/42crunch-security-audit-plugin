@@ -5,16 +5,14 @@
 
 package com.xliic.ci.jenkins;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import java.io.IOException;
-
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.credentialsbinding.Binding;
 import org.jenkinsci.plugins.credentialsbinding.BindingDescriptor;
@@ -33,8 +31,12 @@ public class ApiKeyBinding extends Binding<ApiKeyImpl> {
     }
 
     @Override
-    public SingleEnvironment bindSingle(@Nonnull Run<?, ?> build, @Nullable FilePath workspace,
-            @Nullable Launcher launcher, @Nonnull TaskListener listener) throws IOException, InterruptedException {
+    public SingleEnvironment bindSingle(
+            @Nonnull Run<?, ?> build,
+            @Nullable FilePath workspace,
+            @Nullable Launcher launcher,
+            @Nonnull TaskListener listener)
+            throws IOException, InterruptedException {
         return new SingleEnvironment(getCredentials(build).getApiKey().getPlainText());
     }
 
@@ -56,7 +58,5 @@ public class ApiKeyBinding extends Binding<ApiKeyImpl> {
         public String getDisplayName() {
             return Messages.ApiKeyImpl_api_key();
         }
-
     }
-
 }

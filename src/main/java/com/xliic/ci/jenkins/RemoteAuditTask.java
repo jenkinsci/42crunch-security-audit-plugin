@@ -1,30 +1,28 @@
 package com.xliic.ci.jenkins;
 
+import com.xliic.cicd.audit.AuditResults;
+import com.xliic.cicd.audit.Auditor;
+import com.xliic.cicd.audit.Secret;
+import com.xliic.cicd.audit.SharingType;
+import com.xliic.cicd.common.Logger;
+import com.xliic.cicd.common.Reference;
+import com.xliic.cicd.common.TaskException;
+import com.xliic.cicd.common.Util;
+import com.xliic.cicd.common.WritableWorkspace;
+import com.xliic.common.ContentType;
+import com.xliic.common.Workspace;
+import com.xliic.common.WorkspaceContent;
+import com.xliic.common.WorkspaceException;
+import hudson.AbortException;
+import hudson.FilePath;
+import hudson.ProxyConfiguration;
+import hudson.model.TaskListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import com.xliic.cicd.common.Util;
-
-import com.xliic.cicd.common.TaskException;
-import com.xliic.cicd.common.WritableWorkspace;
-import com.xliic.cicd.audit.AuditResults;
-import com.xliic.cicd.audit.Auditor;
-import com.xliic.cicd.common.Logger;
-import com.xliic.cicd.common.Reference;
-import com.xliic.cicd.audit.Secret;
-import com.xliic.cicd.audit.SharingType;
-import com.xliic.common.ContentType;
-import com.xliic.common.Workspace;
-import com.xliic.common.WorkspaceContent;
-import com.xliic.common.WorkspaceException;
-
-import hudson.model.TaskListener;
-import hudson.AbortException;
-import hudson.FilePath;
-import hudson.ProxyConfiguration;
 import jenkins.security.MasterToSlaveCallable;
 
 public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException> {
@@ -49,11 +47,27 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private boolean ignoreNetworkErrors;
     private boolean ignoreFailures;
 
-    RemoteAuditTask(FilePath workspace, TaskListener listener, Secret apiKey, String platformUrl, String logLevel,
-            String defaultCollectionName, String rootDirectory, String jsonReport, String apiTags,
-            boolean skipLocalChecks, boolean ignoreNetworkErrors, boolean ignoreFailures,
-            String shareEveryone, int minScore, ProxyConfiguration proxyConfiguration, String actualRepositoryName,
-            String actualBranchName, String actualTagName, String actualPrId, String actualPrTargetBranch) {
+    RemoteAuditTask(
+            FilePath workspace,
+            TaskListener listener,
+            Secret apiKey,
+            String platformUrl,
+            String logLevel,
+            String defaultCollectionName,
+            String rootDirectory,
+            String jsonReport,
+            String apiTags,
+            boolean skipLocalChecks,
+            boolean ignoreNetworkErrors,
+            boolean ignoreFailures,
+            String shareEveryone,
+            int minScore,
+            ProxyConfiguration proxyConfiguration,
+            String actualRepositoryName,
+            String actualBranchName,
+            String actualTagName,
+            String actualPrId,
+            String actualPrTargetBranch) {
         this.listener = listener;
         this.workspace = workspace;
         this.logLevel = logLevel;
@@ -126,7 +140,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             listener.getLogger().flush();
             if (!ignoreFailures && !results.ignoreFailures) {
                 if (results.failures > 0) {
-                    throw new AbortException(String.format("Detected %d failure(s) in the %d OpenAPI file(s) checked",
+                    throw new AbortException(String.format(
+                            "Detected %d failure(s) in the %d OpenAPI file(s) checked",
                             results.failures, results.summary.size()));
                 } else if (results.summary.size() == 0) {
                     throw new AbortException("No OpenAPI files found.");
@@ -174,8 +189,9 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
 
     private void displayReport(AuditResults results, Logger logger, Workspace workspace) {
         results.summary.forEach((file, summary) -> {
-            logger.error(String.format("Audited %s, the API score is %d", workspace.relativize(file).getPath(),
-                    summary.score));
+            logger.error(String.format(
+                    "Audited %s, the API score is %d",
+                    workspace.relativize(file).getPath(), summary.score));
             if (summary.failures.length > 0) {
                 for (String failure : summary.failures) {
                     logger.error("    " + failure);
@@ -216,7 +232,6 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
 
             boolean isYaml = Util.isYaml(uri.getPath());
             return new WorkspaceContent(contentData, isYaml ? ContentType.YAML : ContentType.JSON);
-
         }
 
         @Override
@@ -225,7 +240,6 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
 
             FilePath filepath = new FilePath(workspace, uri.getPath());
             filepath.write(content.data, StandardCharsets.UTF_8.name());
-
         }
 
         @Override
@@ -252,6 +266,5 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
                 throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
             }
         }
-
     }
 }
