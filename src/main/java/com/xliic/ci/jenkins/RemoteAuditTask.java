@@ -266,5 +266,10 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
                 throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
             }
         }
+
+        @Override
+        public Workspace child(String dir) throws IOException {
+            return new WorkspaceImpl(workspace.child(dir));
+        }
     }
 }

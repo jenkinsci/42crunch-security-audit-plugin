@@ -6,6 +6,8 @@
 package com.xliic.ci.jenkins;
 
 import com.xliic.cicd.common.OpenApiFinder;
+import com.xliic.cicd.common.TaskException;
+
 import hudson.FilePath;
 import hudson.remoting.VirtualChannel;
 import hudson.util.DirScanner;
@@ -60,5 +62,10 @@ class Finder extends MasterToSlaveFileCallable<List<URI>> implements OpenApiFind
         });
 
         return found;
+    }
+
+    @Override
+    public OpenApiFinder child(String dir) throws TaskException, IOException {
+        return new Finder(workspace.child(dir));
     }
 }
