@@ -45,7 +45,13 @@ class Finder extends MasterToSlaveFileCallable<List<URI>> implements OpenApiFind
     }
 
     @Override
-    public List<URI> find() throws IOException, InterruptedException {
+    public List<URI> find() throws IOException, InterruptedException, TaskException {
+        if (!workspace.exists()) {
+            throw new TaskException(String.format("Path '%s' does not exist.", workspace));
+        }
+        if (!workspace.isDirectory()) {
+            throw new TaskException(String.format("Path '%s' is not a directory.", workspace));
+        }
         List<URI> openApiFiles = workspace.act(this);
         return openApiFiles;
     }
