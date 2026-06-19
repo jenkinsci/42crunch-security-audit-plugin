@@ -62,6 +62,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private boolean skipLocalChecks = false;
     private boolean ignoreNetworkErrors = false;
     private boolean ignoreFailures = false;
+    private boolean alwaysCreateCollection = false;
+    private boolean enableGraphql = false;
 
     private String shareEveryone;
 
@@ -231,6 +233,24 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.shareEveryone = shareEveryone;
     }
 
+    public boolean getAlwaysCreateCollection() {
+        return alwaysCreateCollection;
+    }
+
+    @DataBoundSetter
+    public void setAlwaysCreateCollection(boolean alwaysCreateCollection) {
+        this.alwaysCreateCollection = alwaysCreateCollection;
+    }
+
+    public boolean getEnableGraphql() {
+        return enableGraphql;
+    }
+
+    @DataBoundSetter
+    public void setEnableGraphql(boolean enableGraphql) {
+        this.enableGraphql = enableGraphql;
+    }
+
     private String expandVariable(String name, String value, Run<?, ?> build, TaskListener listener, Logger logger)
             throws IOException, InterruptedException {
         if (build instanceof AbstractBuild && value != null && !value.equals("")) {
@@ -303,6 +323,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                     getSkipLocalChecks(),
                     getIgnoreNetworkErrors(),
                     getIgnoreFailures(),
+                    getAlwaysCreateCollection(),
+                    getEnableGraphql(),
                     getShareEveryone(),
                     minScore,
                     proxyConfiguration,
@@ -346,11 +368,11 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             }
 
             return result.includeMatchingAs(
-                            ACL.SYSTEM,
-                            ancestor,
-                            ApiKey.class,
-                            Collections.<DomainRequirement>emptyList(),
-                            CredentialsMatchers.always())
+                    ACL.SYSTEM,
+                    ancestor,
+                    ApiKey.class,
+                    Collections.<DomainRequirement>emptyList(),
+                    CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
         }
 

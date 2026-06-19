@@ -46,6 +46,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private boolean skipLocalChecks;
     private boolean ignoreNetworkErrors;
     private boolean ignoreFailures;
+    private boolean alwaysCreateCollection;
+    private boolean enableGraphql;
 
     RemoteAuditTask(
             FilePath workspace,
@@ -60,6 +62,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             boolean skipLocalChecks,
             boolean ignoreNetworkErrors,
             boolean ignoreFailures,
+            boolean alwaysCreateCollection,
+            boolean enableGraphql,
             String shareEveryone,
             int minScore,
             ProxyConfiguration proxyConfiguration,
@@ -88,6 +92,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.skipLocalChecks = skipLocalChecks;
         this.ignoreFailures = ignoreFailures;
         this.ignoreNetworkErrors = ignoreNetworkErrors;
+        this.alwaysCreateCollection = alwaysCreateCollection;
+        this.enableGraphql = enableGraphql;
     }
 
     public Void call() throws AbortException {
@@ -106,6 +112,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             throw new AbortException(ex.getMessage());
         }
         auditor.setSkipLocalChecks(skipLocalChecks);
+        auditor.setAlwaysCreateTechnicalCollection(alwaysCreateCollection);
+        auditor.setEnableGraphql(enableGraphql);
         auditor.setMinScore(minScore);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
