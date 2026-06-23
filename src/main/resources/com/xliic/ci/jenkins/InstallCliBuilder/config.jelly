@@ -1,0 +1,24 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry name="logLevel" title="Log level" field="logLevel">
+        <select name="logLevel">
+            <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
+            <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
+            <option value="WARN" selected="${instance.logLevel == 'WARN' ? 'true' : null}">WARN</option>
+            <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
+            <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
+         </select>
+    </f:entry>
+
+    <f:section>
+        <f:advanced>
+            <f:entry title="CLI download repository" field="cliRepository">
+                <f:textbox default="https://repo.42crunch.com/downloads" />
+            </f:entry>
+
+            <f:entry title="CLI version" field="cliVersion">
+                <f:textbox default="0.0.0" />
+            </f:entry>
+        </f:advanced>
+    </f:section>
+</j:jelly>

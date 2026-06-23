@@ -1,0 +1,64 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+    <f:entry title="API token" field="credentialsId">
+        <c:select/>
+    </f:entry>
+
+    <f:entry title="Enable GraphQL scans" field="enableGraphql">
+        <f:checkbox/>
+    </f:entry>
+
+    <f:section>
+        <f:advanced>
+            <f:entry title="Platform URL" field="platformUrl">
+                <f:textbox default="https://us.42crunch.cloud" />
+            </f:entry>
+
+            <f:entry name="logLevel" title="Log level" field="logLevel">
+                <select name="logLevel">
+                    <option value="DEBUG" selected="${instance.logLevel == 'DEBUG' ? 'true' : null}">DEBUG</option>
+                    <option value="INFO" selected="${instance.logLevel == 'INFO' ? 'true' : null}">INFO</option>
+                    <option value="WARN" selected="${instance.logLevel == 'WARN' ? 'true' : null}">WARN</option>
+                    <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
+                    <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
+                 </select>
+            </f:entry>
+
+            <f:entry title="Repository name" field="repositoryName">
+                <f:textbox default="$${GIT_URL}" />
+            </f:entry>
+
+            <f:entry title="Branch name" field="branchName">
+                <f:textbox default="$${GIT_LOCAL_BRANCH}" />
+            </f:entry>
+
+            <f:entry title="Tag name" field="tagName">
+                <f:textbox default="$${TAG_NAME}" />
+            </f:entry>
+
+            <f:entry title="PR ID" field="prId">
+                <f:textbox default="$${CHANGE_ID}" />
+            </f:entry>
+
+            <f:entry title="PR target branch" field="prTargetBranch">
+                <f:textbox default="$${CHANGE_TARGET}" />
+            </f:entry>
+
+            <f:entry title="Default collection name" field="defaultCollectionName">
+                <f:textbox default="" />
+            </f:entry>
+
+            <f:entry title="Root directory" field="rootDirectory">
+                <f:textbox default="" />
+            </f:entry>
+
+            <h4>Ignoring failures</h4>
+            <f:entry title="Ignore network errors" field="ignoreNetworkErrors">
+                <f:checkbox/>
+            </f:entry>
+            <f:entry title="Ignore scan failures" field="ignoreFailures">
+                <f:checkbox/>
+            </f:entry>
+        </f:advanced>
+    </f:section>
+</j:jelly>

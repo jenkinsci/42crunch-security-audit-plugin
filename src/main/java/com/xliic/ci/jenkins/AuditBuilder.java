@@ -30,7 +30,6 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -62,7 +61,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private boolean skipLocalChecks = false;
     private boolean ignoreNetworkErrors = false;
     private boolean ignoreFailures = false;
-    private boolean alwaysCreateCollection = false;
+    private boolean alwaysCreateCollection = true;
     private boolean enableGraphql = false;
 
     private String shareEveryone;
@@ -400,19 +399,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 }
             }
             return FormValidation.ok();
-        }
-    }
-
-    static class SecretImpl implements Secret, Serializable {
-        private hudson.util.Secret secret;
-
-        public SecretImpl(hudson.util.Secret secret) {
-            this.secret = secret;
-        }
-
-        @Override
-        public String getPlainText() {
-            return secret.getPlainText();
         }
     }
 }
