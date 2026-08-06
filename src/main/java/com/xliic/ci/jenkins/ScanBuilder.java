@@ -229,8 +229,6 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
             }
         }
 
-        String platformServices = derivePlatformServices(this.platformUrl);
-
         String actualRepositoryName = expandVariable("repositoryName", repositoryName, run, listener, logger);
         if (actualRepositoryName == null || actualRepositoryName.length() == 0) {
             throw new AbortException(String.format("Parameter repositoryName must be set"));
@@ -250,7 +248,6 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
                     listener,
                     apiKey,
                     getPlatformUrl(),
-                    platformServices,
                     getLogLevel(),
                     getDefaultCollectionName(),
                     getRootDirectory(),
@@ -265,22 +262,6 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
                     actualPrTargetBranch));
         } else {
             throw new AbortException("Unable to get channel to launch ScanTask");
-        }
-    }
-
-    private static String derivePlatformServices(String platformUrl) throws AbortException {
-        try {
-            String platformHost = new URI(platformUrl).getAuthority();
-            if (platformHost == null) {
-                throw new AbortException(String.format("Unable to derive platform services host from URL '%s'",
-                        platformUrl));
-            }
-            if (platformHost.toLowerCase().startsWith("platform")) {
-                return platformHost.replaceFirst("(?i)^platform", "services") + ":8001";
-            }
-            return "services." + platformHost + ":8001";
-        } catch (URISyntaxException e) {
-            throw new AbortException(String.format("Malformed platform URL '%s': %s", platformUrl, e.getMessage()));
         }
     }
 

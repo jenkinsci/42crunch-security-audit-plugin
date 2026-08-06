@@ -28,7 +28,6 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
     private TaskListener listener;
     private Secret apiKey;
     private String platformUrl;
-    private String platformServices;
     private String logLevel;
     private String defaultCollectionName;
     private String rootDirectory;
@@ -47,7 +46,6 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
             TaskListener listener,
             Secret apiKey,
             String platformUrl,
-            String platformServices,
             String logLevel,
             String defaultCollectionName,
             String rootDirectory,
@@ -64,7 +62,6 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
         this.listener = listener;
         this.apiKey = apiKey;
         this.platformUrl = platformUrl;
-        this.platformServices = platformServices;
         this.logLevel = logLevel;
         this.defaultCollectionName = defaultCollectionName;
         this.rootDirectory = rootDirectory;
@@ -113,7 +110,6 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
             Scanner scanner = new Scanner(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
             scanner.setCli(cli);
             scanner.setTmpDir(cliConfig.temp);
-            scanner.setPlatformServices(platformServices);
             scanner.setEnv(env);
             scanner.setEnableGraphql(enableGraphql);
             if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
