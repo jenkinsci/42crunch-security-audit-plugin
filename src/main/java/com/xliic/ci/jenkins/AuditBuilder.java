@@ -49,6 +49,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String credentialsId;
     private String platformUrl = "https://us.42crunch.cloud";
     private String logLevel;
+    private boolean disableLogRedaction = false;
     private String repositoryName = "${GIT_URL}";
     private String branchName = "";
     private String tagName = "";
@@ -137,6 +138,15 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setLogLevel(String logLevel) {
         this.logLevel = logLevel;
+    }
+
+    public boolean getDisableLogRedaction() {
+        return disableLogRedaction;
+    }
+
+    @DataBoundSetter
+    public void setDisableLogRedaction(boolean disableLogRedaction) {
+        this.disableLogRedaction = disableLogRedaction;
     }
 
     public String getRepositoryName() {
@@ -315,6 +325,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                     apiKey,
                     getPlatformUrl(),
                     getLogLevel(),
+                    getDisableLogRedaction(),
                     getDefaultCollectionName(),
                     getRootDirectory(),
                     getJsonReport(),

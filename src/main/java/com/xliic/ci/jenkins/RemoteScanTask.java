@@ -29,6 +29,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
     private Secret apiKey;
     private String platformUrl;
     private String logLevel;
+    private boolean disableLogRedaction;
     private String defaultCollectionName;
     private String rootDirectory;
     private boolean enableGraphql;
@@ -47,6 +48,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
             Secret apiKey,
             String platformUrl,
             String logLevel,
+            boolean disableLogRedaction,
             String defaultCollectionName,
             String rootDirectory,
             boolean enableGraphql,
@@ -63,6 +65,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
         this.apiKey = apiKey;
         this.platformUrl = platformUrl;
         this.logLevel = logLevel;
+        this.disableLogRedaction = disableLogRedaction;
         this.defaultCollectionName = defaultCollectionName;
         this.rootDirectory = rootDirectory;
         this.enableGraphql = enableGraphql;
@@ -112,6 +115,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
             scanner.setTmpDir(cliConfig.temp);
             scanner.setEnv(env);
             scanner.setEnableGraphql(enableGraphql);
+            scanner.setDisableLogRedaction(disableLogRedaction);
             if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
                 scanner.setDefaultCollectionName(defaultCollectionName);
             }

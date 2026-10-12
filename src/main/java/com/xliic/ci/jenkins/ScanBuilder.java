@@ -37,6 +37,7 @@ import java.util.Map;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -47,6 +48,7 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
     private String credentialsId;
     private String platformUrl = "https://us.42crunch.cloud";
     private String logLevel;
+    private boolean disableLogRedaction = false;
     private String repositoryName = "${GIT_URL}";
     private String branchName = "";
     private String tagName = "";
@@ -92,6 +94,15 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setLogLevel(String logLevel) {
         this.logLevel = logLevel;
+    }
+
+    public boolean getDisableLogRedaction() {
+        return disableLogRedaction;
+    }
+
+    @DataBoundSetter
+    public void setDisableLogRedaction(boolean disableLogRedaction) {
+        this.disableLogRedaction = disableLogRedaction;
     }
 
     public String getRepositoryName() {
@@ -198,7 +209,7 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
+    public void perform(Run<?, ?> run, FilePath workspace, EnvVars env, Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
         LoggerImpl logger = new LoggerImpl(listener.getLogger(), logLevel);
 
@@ -239,8 +250,6 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
         String actualPrId = expandVariable("prId", prId, run, listener, logger);
         String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
 
-        Map<String, String> env = new HashMap<>(run.getEnvironment(listener));
-
         VirtualChannel channel = launcher.getChannel();
         if (channel != null) {
             channel.call(new RemoteScanTask(
@@ -249,6 +258,7 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
                     apiKey,
                     getPlatformUrl(),
                     getLogLevel(),
+                    getDisableLogRedaction(),
                     getDefaultCollectionName(),
                     getRootDirectory(),
                     getEnableGraphql(),

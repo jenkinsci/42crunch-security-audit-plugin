@@ -20,6 +20,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private TaskListener listener;
     private FilePath workspace;
     private String logLevel;
+    private boolean disableLogRedaction;
     private Secret apiKey;
     private String platformUrl;
     private String shareEveryone;
@@ -46,6 +47,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             Secret apiKey,
             String platformUrl,
             String logLevel,
+            boolean disableLogRedaction,
             String defaultCollectionName,
             String rootDirectory,
             String jsonReport,
@@ -66,6 +68,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.listener = listener;
         this.workspace = workspace;
         this.logLevel = logLevel;
+        this.disableLogRedaction = disableLogRedaction;
         this.apiKey = apiKey;
         this.platformUrl = platformUrl;
         this.shareEveryone = shareEveryone;
@@ -106,6 +109,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         auditor.setAlwaysCreateTechnicalCollection(alwaysCreateCollection);
         auditor.setEnableGraphql(enableGraphql);
         auditor.setMinScore(minScore);
+        auditor.setDisableLogRedaction(disableLogRedaction);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
             auditor.setDefaultCollectionName(defaultCollectionName);
