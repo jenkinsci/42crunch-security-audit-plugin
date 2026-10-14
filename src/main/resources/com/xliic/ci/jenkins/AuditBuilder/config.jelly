@@ -6,6 +6,11 @@
     <f:entry title="Minimum audit score" field="minScore">
         <f:number default="75" />
     </f:entry>
+
+    <f:entry title="Enable GraphQL audits" field="enableGraphql">
+        <f:checkbox/>
+    </f:entry>
+
     <f:section>
         <f:advanced>
             <f:entry title="Platform URL" field="platformUrl">
@@ -20,6 +25,10 @@
                     <option value="ERROR" selected="${instance.logLevel == 'ERROR' ? 'true' : null}">ERROR</option>
                     <option value="FATAL" selected="${instance.logLevel == 'FATAL' ? 'true' : null}">FATAL</option>
                  </select>
+            </f:entry>
+
+            <f:entry title="Disable log redaction" field="disableLogRedaction">
+                <f:checkbox/>
             </f:entry>
 
             <f:entry title="Repository name" field="repositoryName">
@@ -67,6 +76,10 @@
                  </select>
             </f:entry>
 
+            <f:entry title="Always create collections" field="alwaysCreateCollection">
+                <f:checkbox/>
+            </f:entry>
+
             <h4>Ignoring failures</h4>
             <f:entry title="Skip local checks" field="skipLocalChecks">
                 <f:checkbox/>
@@ -77,7 +90,6 @@
             <f:entry title="Ignore audit failures" field="ignoreFailures">
                 <f:checkbox/>
             </f:entry>
-
         </f:advanced>
     </f:section>
 </j:jelly>

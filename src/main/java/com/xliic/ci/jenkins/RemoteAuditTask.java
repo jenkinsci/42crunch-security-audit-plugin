@@ -7,28 +7,20 @@ import com.xliic.cicd.audit.SharingType;
 import com.xliic.cicd.common.Logger;
 import com.xliic.cicd.common.Reference;
 import com.xliic.cicd.common.TaskException;
-import com.xliic.cicd.common.Util;
-import com.xliic.cicd.common.WritableWorkspace;
-import com.xliic.common.ContentType;
 import com.xliic.common.Workspace;
-import com.xliic.common.WorkspaceContent;
 import com.xliic.common.WorkspaceException;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.ProxyConfiguration;
 import hudson.model.TaskListener;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import jenkins.security.MasterToSlaveCallable;
 
 public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException> {
     private TaskListener listener;
     private FilePath workspace;
     private String logLevel;
+    private boolean disableLogRedaction;
     private Secret apiKey;
     private String platformUrl;
     private String shareEveryone;
@@ -46,6 +38,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
     private boolean skipLocalChecks;
     private boolean ignoreNetworkErrors;
     private boolean ignoreFailures;
+    private boolean alwaysCreateCollection;
+    private boolean enableGraphql;
 
     RemoteAuditTask(
             FilePath workspace,
@@ -53,6 +47,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             Secret apiKey,
             String platformUrl,
             String logLevel,
+            boolean disableLogRedaction,
             String defaultCollectionName,
             String rootDirectory,
             String jsonReport,
@@ -60,6 +55,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             boolean skipLocalChecks,
             boolean ignoreNetworkErrors,
             boolean ignoreFailures,
+            boolean alwaysCreateCollection,
+            boolean enableGraphql,
             String shareEveryone,
             int minScore,
             ProxyConfiguration proxyConfiguration,
@@ -71,6 +68,7 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.listener = listener;
         this.workspace = workspace;
         this.logLevel = logLevel;
+        this.disableLogRedaction = disableLogRedaction;
         this.apiKey = apiKey;
         this.platformUrl = platformUrl;
         this.shareEveryone = shareEveryone;
@@ -88,6 +86,8 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
         this.skipLocalChecks = skipLocalChecks;
         this.ignoreFailures = ignoreFailures;
         this.ignoreNetworkErrors = ignoreNetworkErrors;
+        this.alwaysCreateCollection = alwaysCreateCollection;
+        this.enableGraphql = enableGraphql;
     }
 
     public Void call() throws AbortException {
@@ -106,7 +106,10 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             throw new AbortException(ex.getMessage());
         }
         auditor.setSkipLocalChecks(skipLocalChecks);
+        auditor.setAlwaysCreateTechnicalCollection(alwaysCreateCollection);
+        auditor.setEnableGraphql(enableGraphql);
         auditor.setMinScore(minScore);
+        auditor.setDisableLogRedaction(disableLogRedaction);
 
         if (defaultCollectionName != null && !defaultCollectionName.equals("")) {
             auditor.setDefaultCollectionName(defaultCollectionName);
@@ -205,70 +208,5 @@ public class RemoteAuditTask extends MasterToSlaveCallable<Void, AbortException>
             }
             logger.error("");
         });
-    }
-
-    static class WorkspaceImpl implements WritableWorkspace {
-
-        private FilePath workspace;
-
-        WorkspaceImpl(FilePath workspace) {
-            this.workspace = workspace;
-        }
-
-        @Override
-        public WorkspaceContent read(URI uri) throws IOException, InterruptedException {
-
-            FilePath filepath = new FilePath(workspace, uri.getPath());
-
-            InputStream is = filepath.read();
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            int read;
-            byte[] data = new byte[16384];
-            while ((read = is.read(data, 0, data.length)) != -1) {
-                buffer.write(data, 0, read);
-            }
-            buffer.flush();
-            String contentData = new String(buffer.toByteArray(), StandardCharsets.UTF_8);
-
-            boolean isYaml = Util.isYaml(uri.getPath());
-            return new WorkspaceContent(contentData, isYaml ? ContentType.YAML : ContentType.JSON);
-        }
-
-        @Override
-        public void write(URI uri, WorkspaceContent content)
-                throws IOException, InterruptedException, WorkspaceException {
-
-            FilePath filepath = new FilePath(workspace, uri.getPath());
-            filepath.write(content.data, StandardCharsets.UTF_8.name());
-        }
-
-        @Override
-        public boolean exists(URI file) throws IOException, InterruptedException {
-            FilePath filepath = new FilePath(workspace, file.getPath());
-            return filepath.exists();
-        }
-
-        @Override
-        public URI resolve(String filename) {
-            try {
-                String safeFilename = new URI(null, filename, null).getRawSchemeSpecificPart();
-                return workspace.toURI().resolve(safeFilename);
-            } catch (IOException | InterruptedException | URISyntaxException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
-            }
-        }
-
-        @Override
-        public URI relativize(URI uri) {
-            try {
-                return workspace.toURI().relativize(uri);
-            } catch (IOException | InterruptedException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException().initCause(e);
-            }
-        }
-
-        public Workspace child(String dir) throws IOException {
-            return new WorkspaceImpl(workspace.child(dir));
-        }
     }
 }

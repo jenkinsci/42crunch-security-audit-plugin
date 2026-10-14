@@ -30,7 +30,6 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -50,6 +49,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private String credentialsId;
     private String platformUrl = "https://us.42crunch.cloud";
     private String logLevel;
+    private boolean disableLogRedaction = false;
     private String repositoryName = "${GIT_URL}";
     private String branchName = "";
     private String tagName = "";
@@ -62,6 +62,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     private boolean skipLocalChecks = false;
     private boolean ignoreNetworkErrors = false;
     private boolean ignoreFailures = false;
+    private boolean alwaysCreateCollection = true;
+    private boolean enableGraphql = false;
 
     private String shareEveryone;
 
@@ -136,6 +138,15 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setLogLevel(String logLevel) {
         this.logLevel = logLevel;
+    }
+
+    public boolean getDisableLogRedaction() {
+        return disableLogRedaction;
+    }
+
+    @DataBoundSetter
+    public void setDisableLogRedaction(boolean disableLogRedaction) {
+        this.disableLogRedaction = disableLogRedaction;
     }
 
     public String getRepositoryName() {
@@ -231,6 +242,24 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
         this.shareEveryone = shareEveryone;
     }
 
+    public boolean getAlwaysCreateCollection() {
+        return alwaysCreateCollection;
+    }
+
+    @DataBoundSetter
+    public void setAlwaysCreateCollection(boolean alwaysCreateCollection) {
+        this.alwaysCreateCollection = alwaysCreateCollection;
+    }
+
+    public boolean getEnableGraphql() {
+        return enableGraphql;
+    }
+
+    @DataBoundSetter
+    public void setEnableGraphql(boolean enableGraphql) {
+        this.enableGraphql = enableGraphql;
+    }
+
     private String expandVariable(String name, String value, Run<?, ?> build, TaskListener listener, Logger logger)
             throws IOException, InterruptedException {
         if (build instanceof AbstractBuild && value != null && !value.equals("")) {
@@ -296,6 +325,7 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                     apiKey,
                     getPlatformUrl(),
                     getLogLevel(),
+                    getDisableLogRedaction(),
                     getDefaultCollectionName(),
                     getRootDirectory(),
                     getJsonReport(),
@@ -303,6 +333,8 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                     getSkipLocalChecks(),
                     getIgnoreNetworkErrors(),
                     getIgnoreFailures(),
+                    getAlwaysCreateCollection(),
+                    getEnableGraphql(),
                     getShareEveryone(),
                     minScore,
                     proxyConfiguration,
@@ -346,11 +378,11 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
             }
 
             return result.includeMatchingAs(
-                            ACL.SYSTEM,
-                            ancestor,
-                            ApiKey.class,
-                            Collections.<DomainRequirement>emptyList(),
-                            CredentialsMatchers.always())
+                    ACL.SYSTEM,
+                    ancestor,
+                    ApiKey.class,
+                    Collections.<DomainRequirement>emptyList(),
+                    CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
         }
 
@@ -378,19 +410,6 @@ public class AuditBuilder extends Builder implements SimpleBuildStep {
                 }
             }
             return FormValidation.ok();
-        }
-    }
-
-    static class SecretImpl implements Secret, Serializable {
-        private hudson.util.Secret secret;
-
-        public SecretImpl(hudson.util.Secret secret) {
-            this.secret = secret;
-        }
-
-        @Override
-        public String getPlainText() {
-            return secret.getPlainText();
         }
     }
 }
