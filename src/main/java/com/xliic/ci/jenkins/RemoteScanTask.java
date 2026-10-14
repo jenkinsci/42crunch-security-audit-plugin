@@ -8,6 +8,7 @@ package com.xliic.ci.jenkins;
 import com.xliic.cicd.audit.Secret;
 import com.xliic.cicd.audit.scan.CliConfig;
 import com.xliic.cicd.audit.scan.CliInstaller;
+import com.xliic.cicd.audit.scan.CliPlatform;
 import com.xliic.cicd.audit.scan.InstalledCli;
 import com.xliic.cicd.audit.scan.ScanResults;
 import com.xliic.cicd.audit.scan.Scanner;
@@ -25,6 +26,7 @@ import jenkins.security.MasterToSlaveCallable;
 
 public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> {
     private FilePath workspace;
+    private String cliHome;
     private TaskListener listener;
     private Secret apiKey;
     private String platformUrl;
@@ -44,6 +46,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
 
     RemoteScanTask(
             FilePath workspace,
+            String cliHome,
             TaskListener listener,
             Secret apiKey,
             String platformUrl,
@@ -61,6 +64,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
             String actualPrId,
             String actualPrTargetBranch) {
         this.workspace = workspace;
+        this.cliHome = cliHome;
         this.listener = listener;
         this.apiKey = apiKey;
         this.platformUrl = platformUrl;
@@ -80,8 +84,6 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
     }
 
     public Void call() throws AbortException {
-        // Resolve the CLI cache from the workspace root, independent of rootDirectory,
-        // so it matches the location used by the install-cli step.
         Path base = Paths.get(workspace.getRemote()).resolve(".42c-ast");
         CliConfig cliConfig = new CliConfig(base, base.resolve("tmp"));
 
@@ -104,11 +106,7 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
         }
 
         try {
-            InstalledCli cli = new CliInstaller(logger).cliFind(cliConfig);
-            if (cli == null) {
-                throw new AbortException(
-                        "42c-ast CLI is not installed. Add the 'installCli' build step before 'scan'.");
-            }
+            InstalledCli cli = findCli(logger, cliConfig.temp);
 
             Scanner scanner = new Scanner(finder, logger, apiKey, platformUrl, "Jenkins-CICD/2.0", "jenkins");
             scanner.setCli(cli);
@@ -153,6 +151,21 @@ public class RemoteScanTask extends MasterToSlaveCallable<Void, AbortException> 
         }
 
         return null;
+    }
+
+    private InstalledCli findCli(LoggerImpl logger, Path tmpDir) throws AbortException {
+        if (cliHome == null) {
+            CliPlatform platform = CliPlatform.detect();
+            String filename = platform != null ? platform.filename() : "42c-ast";
+            logger.info("No 42Crunch CLI tool configured, using 42c-ast from PATH");
+            return new InstalledCli(Paths.get(filename));
+        }
+
+        InstalledCli cli = new CliInstaller(logger).cliFind(new CliConfig(Paths.get(cliHome), tmpDir));
+        if (cli == null) {
+            throw new AbortException(String.format("42Crunch CLI not found in %s", cliHome));
+        }
+        return cli;
     }
 
     private Reference getReference(String branch, String tag, String prId, String prTargetBranch) {

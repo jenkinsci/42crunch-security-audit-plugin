@@ -10,6 +10,10 @@
 
     <f:section>
         <f:advanced>
+            <f:entry title="42Crunch CLI" field="cliInstallation">
+                <f:select />
+            </f:entry>
+
             <f:entry title="Platform URL" field="platformUrl">
                 <f:textbox default="https://us.42crunch.cloud" />
             </f:entry>

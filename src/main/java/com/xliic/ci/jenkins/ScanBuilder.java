@@ -19,7 +19,9 @@ import hudson.Launcher;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Computer;
 import hudson.model.Item;
+import hudson.model.Node;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
@@ -56,6 +58,7 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
     private boolean enableGraphql = false;
     private boolean ignoreNetworkErrors = false;
     private boolean ignoreFailures = false;
+    private String cliInstallation = "";
 
     @DataBoundConstructor
     public ScanBuilder(String credentialsId, String platformUrl) {
@@ -192,6 +195,35 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
         this.ignoreFailures = ignoreFailures;
     }
 
+    public String getCliInstallation() {
+        return cliInstallation;
+    }
+
+    @DataBoundSetter
+    public void setCliInstallation(String cliInstallation) {
+        this.cliInstallation = cliInstallation;
+    }
+
+    private String resolveCliHome(FilePath workspace, EnvVars env, TaskListener listener)
+            throws IOException, InterruptedException {
+        String name = Util.fixEmptyAndTrim(cliInstallation);
+        if (name == null) {
+            // Set by a 'tools' block in Pipeline, otherwise 42c-ast is looked up on PATH
+            return Util.fixEmptyAndTrim(env.get(CliInstallation.CLI_HOME));
+        }
+
+        CliInstallation installation = CliInstallation.get(name);
+        if (installation == null) {
+            throw new AbortException(String.format("42Crunch CLI installation '%s' is not configured", name));
+        }
+        Computer computer = workspace.toComputer();
+        Node node = computer == null ? null : computer.getNode();
+        if (node == null) {
+            throw new AbortException("Unable to determine the node to install 42Crunch CLI on");
+        }
+        return installation.forNode(node, listener).forEnvironment(env).getHome();
+    }
+
     private String expandVariable(String name, String value, Run<?, ?> build, TaskListener listener, Logger logger)
             throws IOException, InterruptedException {
         if (build instanceof AbstractBuild && value != null && !value.equals("")) {
@@ -247,10 +279,13 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
         String actualPrId = expandVariable("prId", prId, run, listener, logger);
         String actualPrTargetBranch = expandVariable("prTargetBranch", prTargetBranch, run, listener, logger);
 
+        String cliHome = resolveCliHome(workspace, env, listener);
+
         VirtualChannel channel = launcher.getChannel();
         if (channel != null) {
             channel.call(new RemoteScanTask(
                     workspace,
+                    cliHome,
                     listener,
                     apiKey,
                     getPlatformUrl(),
@@ -308,6 +343,16 @@ public class ScanBuilder extends Builder implements SimpleBuildStep {
                     Collections.<DomainRequirement>emptyList(),
                     CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
+        }
+
+        public ListBoxModel doFillCliInstallationItems() {
+            ListBoxModel items = new ListBoxModel();
+            items.add("(Default)", "");
+            for (CliInstallation installation : Jenkins.get()
+                    .getDescriptorByType(CliInstallation.DescriptorImpl.class).getInstallations()) {
+                items.add(installation.getName());
+            }
+            return items;
         }
 
         public FormValidation doCheckPlatformUrl(@QueryParameter String value) {
