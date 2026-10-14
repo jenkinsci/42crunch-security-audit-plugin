@@ -79,6 +79,12 @@ public class CliInstallation extends ToolInstallation
         }
 
         @Override
+        public void setInstallations(CliInstallation... installations) {
+            super.setInstallations(installations);
+            save();
+        }
+
+        @Override
         public List<? extends ToolInstaller> getDefaultInstallers() {
             return Collections.singletonList(new CliDownloadInstaller(null));
         }
